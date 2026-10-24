@@ -244,7 +244,6 @@ local function OpenBusMenu()
     end)
 end
 
--- Marker Interaksi Depot / Terminal
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -267,7 +266,6 @@ CreateThread(function()
     end
 end)
 
--- Loop Pengendalian Titik Halte Bus & Terminal Selesai
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -311,7 +309,7 @@ CreateThread(function()
                                     SetBlipSprite(routeBlip, 357)
                                     SetBlipColour(routeBlip, 2)
                                     SetBlipRoute(routeBlip, true)
-                                    UpdateBusHUD("Kembalikan bus ke Terminal.")
+                                    UpdateBusHUD("Semua rute beres! Kembalikan bus ke Terminal.")
                                     ESX.ShowNotification("Semua rute beres! Bawa bus kembali ke terminal.")
                                 end
                             end
@@ -319,7 +317,6 @@ CreateThread(function()
                     end
                 end
             else
-                -- Rute selesai, buka marker hijau pengembalian bus di terminal
                 local spawnV3 = vector3(Config.SpawnPoint.x, Config.SpawnPoint.y, Config.SpawnPoint.z)
                 local distToTerminal = #(pCoords - spawnV3)
 
@@ -338,7 +335,6 @@ CreateThread(function()
     end
 end)
 
--- Loop Monitor Timer Meninggalkan Bus (3 Menit)
 CreateThread(function()
     while true do
         Wait(1000)

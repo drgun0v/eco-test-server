@@ -34,7 +34,7 @@ local function UpdateBusHUD(stateText)
 end
 
 local function SetRouteToStop(index)
-    hasAnnouncedStop = false -- Reset status announcer untuk halte baru
+    hasAnnouncedStop = false
     if routeBlip then RemoveBlip(routeBlip) end
 
     local stop = Config.MetroStops[index]
@@ -84,7 +84,6 @@ local function HandlePassengersAtStop(stop)
     SetVehicleHandbrake(currentBus, true)
     FreezeEntityPosition(currentBus, true)
 
-    -- Suara rem angin & bel pintu saat halte dibuka
     SendNUIMessage({ action = "playAirBrakes" })
     Wait(300)
     SendNUIMessage({ action = "playDoorChime" })
@@ -92,7 +91,6 @@ local function HandlePassengersAtStop(stop)
     SetVehicleDoorOpen(currentBus, 0, false, false)
     SetVehicleDoorOpen(currentBus, 1, false, false)
 
-    -- 1. Penumpang Turun
     local numToLeave = 0
     if stop.unloadType == UnloadType.All then
         numToLeave = #busPassengers
@@ -117,7 +115,6 @@ local function HandlePassengersAtStop(stop)
         end
     end
 
-    -- 2. Penumpang Naik
     local numToBoard = (stop.unloadType == UnloadType.All) and 0 or math.random(1, 3)
     if numToBoard > 0 then
         UpdateBusHUD("Penumpang baru sedang naik...")
@@ -150,7 +147,6 @@ local function HandlePassengersAtStop(stop)
         end
     end
 
-    -- Bel tanda pintu akan menutup
     SendNUIMessage({ action = "playDoorChime" })
     Wait(1000)
 
@@ -160,14 +156,6 @@ local function HandlePassengersAtStop(stop)
     Wait(500)
     SendNUIMessage({ action = "playAirBrakes" })
 
-    FreezeEntityPosition(currentBus, false)
-    SetVehicleHandbrake(currentBus, false)
-    isHandlingPassengers = false
-end
-
-    Wait(2000)
-    SetVehicleDoorShut(currentBus, 0, false)
-    SetVehicleDoorShut(currentBus, 1, false)
     FreezeEntityPosition(currentBus, false)
     SetVehicleHandbrake(currentBus, false)
     isHandlingPassengers = false
@@ -238,7 +226,6 @@ local function OpenBusMenu()
     end)
 end
 
--- Marker Interaksi Depot / Terminal
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -261,8 +248,6 @@ CreateThread(function()
     end
 end)
 
--- Loop Pengendalian Titik Halte Bus
--- Loop Pengendalian Titik Halte Bus
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -275,16 +260,14 @@ CreateThread(function()
                 local stopCoords = vector3(stop.x, stop.y, stop.z)
                 local dist = #(pCoords - stopCoords)
 
-                -- 1. TRIGGER AUDIO ANNOUNCER (Radius 50 meter)
                 if dist < 50.0 and not hasAnnouncedStop and IsPedInVehicle(playerPed, currentBus, false) then
                     hasAnnouncedStop = true
                     SendNUIMessage({
                         action = "announceStop",
-                        stopName = stop.name
+                        stopName = stop.announceStop or stop.name
                     })
                 end
 
-                -- 2. TAMPILKAN MARKER & TOMBOL INTERAKSI (Radius dekat)
                 if dist < 45.0 then
                     sleep = 0
                     DrawMarker(1, stop.x, stop.y, stop.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 1.0, 72, 202, 228, 150, false, false, 2, false, nil, nil, false)
@@ -312,7 +295,6 @@ CreateThread(function()
                     end
                 end
             else
-                -- Logika saat rute selesai dan bus kembali ke terminal awal
                 local spawnV3 = vector3(Config.SpawnPoint.x, Config.SpawnPoint.y, Config.SpawnPoint.z)
                 local distToTerminal = #(pCoords - spawnV3)
 
@@ -331,7 +313,6 @@ CreateThread(function()
     end
 end)
 
--- Loop Monitor Timer Meninggalkan Bus (3 Menit)
 CreateThread(function()
     while true do
         Wait(1000)

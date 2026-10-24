@@ -1,9 +1,187 @@
-.glass-hud {
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.progress-gradient {
+body {
+    background: transparent;
+    overflow: hidden;
+    user-select: none;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.bus-hud-card {
+    position: absolute;
+    top: 50%;
+    right: 2rem;
+    transform: translateY(-50%);
+    width: 24rem;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.hud-subtitle {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: #48CAE4;
+}
+
+.hud-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #ffffff;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hud-counter {
+    text-align: right;
+}
+
+.hud-counter-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.hud-counter-val {
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #ADE8F4;
+}
+
+.stepper-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.5rem;
+    margin: 0.5rem 0;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stepper-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.step-dot {
+    border-radius: 9999px;
+}
+
+.step-dot.prev {
+    width: 0.875rem;
+    height: 0.875rem;
+    background: rgba(72, 202, 228, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.step-dot.curr {
+    width: 1rem;
+    height: 1rem;
+    background: #48CAE4;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 0 12px #48CAE4;
+    animation: pulse 1.8s infinite;
+}
+
+.step-dot.next {
+    width: 0.875rem;
+    height: 0.875rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.step-label {
+    font-size: 0.625rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.25rem;
+}
+
+.step-label.active {
+    color: #ADE8F4;
+    font-weight: 700;
+}
+
+.step-divider {
+    flex: 1;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 0.5rem;
+}
+
+.progress-box {
+    margin-top: 1rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.35rem;
+}
+
+.progress-info span:last-child {
+    font-weight: 700;
+    color: #ADE8F4;
+}
+
+.progress-track {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    height: 0.65rem;
+    border-radius: 9999px;
+    overflow: hidden;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#progress-fill {
+    height: 100%;
+    border-radius: 9999px;
     background: linear-gradient(90deg, #48CAE4 0%, #ADE8F4 100%);
+    transition: width 0.5s ease-in-out;
+}
+
+.hud-status {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(0.92); }
 }

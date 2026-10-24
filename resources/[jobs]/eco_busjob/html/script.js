@@ -75,12 +75,21 @@ function playAirBrakes() {
 
 function playAnnouncer(text) {
     if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // Hentikan ucapan sebelumnya jika ada
+        window.speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
-        utterance.rate = 0.95;
+        utterance.rate = 0.92; // Kecepatan sedikit diperlambat agar terdengar seperti broadcast publik
         utterance.pitch = 1.0;
-        utterance.volume = 0.8;
+        utterance.volume = 0.85;
+
+        // Otomatis memilih voice English yang paling natural jika tersedia di browser/OS
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Microsoft') || v.default));
+        if (englishVoice) {
+            utterance.voice = englishVoice;
+        }
+
         window.speechSynthesis.speak(utterance);
     }
 }

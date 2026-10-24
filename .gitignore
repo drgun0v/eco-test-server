@@ -36,3 +36,15 @@ db/
 *.bkp
 server.cfg
 !server.cfg.example
+# Abaikan folder vehicle & mapping / mlo
+resources/[vehicle]/
+resources/[mlo]/
+resources/**/[vehicle]/
+resources/**/[mlo]/
+
+# Abaikan file biner/model 3D FiveM
+*.ytd
+*.yft
+*.ydr
+*.ybn
+*.ydd

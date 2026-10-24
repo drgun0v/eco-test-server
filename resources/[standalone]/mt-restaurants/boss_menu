@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocity Tuner Studio - Boss Menu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f5f8;
+            color: #1e293b;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+        }
+
+        .sidebar-active {
+            background-color: #0f172a;
+            color: white;
+            box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.2);
+        }
+
+        .metallic-dark {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .metallic-silver {
+            background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .animate-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .premium-border {
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 glass-panel border-r flex flex-col p-6 z-20">
+        <div class="mb-12 flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl metallic-dark shadow-xl border border-slate-700/20">
+                <i data-lucide="wrench" class="text-white w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-black tracking-tighter text-slate-900">VELOCITY</h1>
+                <p class="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Studio</p>
+            </div>
+        </div>
+
+        <nav class="space-y-1.5 flex-1" id="sidebar-nav">
+            <!-- Items rendered via JS -->
+        </nav>
+
+        <div class="mt-auto p-4 rounded-[24px] bg-white/50 border premium-border flex items-center gap-3">
+            <div class="h-8 w-8 rounded-xl bg-slate-200 border border-white flex items-center justify-center text-[10px] font-black text-slate-500">DU</div>
+            <div class="overflow-hidden">
+                <p class="text-[11px] font-black text-slate-900 truncate">Daniel Underwood</p>
+                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Administrator</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-10 bg-gradient-to-b from-white to-[#f3f5f8] hide-scrollbar relative">
+        <header class="mb-10 flex items-center justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="h-1 w-6 bg-slate-900 rounded-full"></div>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Master Control Panel</span>
+                </div>
+                <h2 id="page-title" class="text-3xl font-black text-slate-900 tracking-tighter capitalize">Dashboard</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="relative group">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                    <input type="text" id="global-search" placeholder="Search operations..." class="h-10 w-64 rounded-2xl border premium-border bg-white/80 pl-10 pr-4 text-xs font-bold text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all shadow-sm">
+                </div>
+                <button class="h-10 w-10 flex items-center justify-center rounded-2xl bg-white border premium-border text-slate-500 hover:text-slate-900 hover:shadow-lg transition-all">
+                    <i data-lucide="settings-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <div id="main-content" class="animate-in">
+            <!-- Content rendered via JS -->
+        </div>
+    </main>
+
+    <!-- Modal for Expenses -->
+    <div id="expense-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-md">
+        <div class="w-full max-w-xl rounded-[40px] border premium-border bg-white shadow-2xl p-8 animate-in">
+            <div class="flex items-start justify-between border-b border-slate-100 pb-6 mb-6">
+                <div>
+                    <h3 class="text-xl font-black text-slate-900 tracking-tight">New Inventory Request</h3>
+                    <p class="text-[9px] font-black text-slate-400 uppercase mt-1 tracking-widest">Studio Supply Chain Management</p>
+                </div>
+                <button onclick="toggleExpenseModal()" class="rounded-full bg-slate-50 p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Category</label>
+                        <select id="exp-category" class="w-full bg-slate-50 border premium-border rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:ring-4 focus:ring-slate-100 transition-all">
+                            <option>Engine Parts</option>
+                            <option>Performance</option>
+                            <option>Body Kit</option>
+                            <option>Tires</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Part Model</label>
+                        <input type="text" id="exp-item" placeholder="e.g. Turbo GT35" class="w-full bg-slate-50 border premium-border rounded-2xl px-4 py-3 text-xs font-bold outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Quantity</label>
+                        <input type="number" id="exp-qty" value="1" class="w-full bg-slate-50 border premium-border rounded-2xl px-4 py-3 text-xs font-bold outline-none">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Unit Price ($)</label>
+                        <input type="number" id="exp-price" placeholder="0.00" class="w-full bg-slate-50 border premium-border rounded-2xl px-4 py-3 text-xs font-bold outline-none">
+                    </div>
+                </div>
+                <button onclick="submitExpenseRequest()" class="w-full py-4 rounded-2xl metallic-dark text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 transition-all active:scale-[0.98]">
+                    Authorize Shipment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 hidden rounded-full bg-slate-950 px-8 py-3.5 font-black text-[10px] text-white uppercase tracking-widest shadow-2xl flex items-center gap-3">
+        <i data-lucide="activity" class="text-slate-500 w-4 h-4"></i>
+        <span id="toast-message">Action processed</span>
+    </div>
+
+    <script>
+        // --- DATA ---
+        let employees = [
+            { id: 1, name: 'Daniel Underwood', rank: 'Owner', status: 'On Duty' },
+            { id: 2, name: 'Natalija Milovic', rank: 'Head Tuner', status: 'On Duty' },
+            { id: 3, name: 'Brill Yin', rank: 'Mechanic', status: 'On Duty' },
+            { id: 4, name: 'Dayong Keef', rank: 'Mechanic', status: 'On Duty' },
+            { id: 5, name: 'Douglas Kingsley', rank: 'Junior Mechanic', status: 'On Duty' },
+            { id: 6, name: 'Kody Marwey', rank: 'Mechanic', status: 'Off Duty' },
+            { id: 8, name: 'Nevin Adriel Noey', rank: 'Mechanic', status: 'On Duty' },
+            { id: 9, name: 'Nika Takumi', rank: 'Apprentice', status: 'On Duty' },
+            { id: 10, name: 'Ravenna Vows', rank: 'Mechanic', status: 'Off Duty' }
+        ];
+
+        let wages = [
+            { id: 1, name: 'Daniel Underwood', week: '10', year: '2026', hours: 55, baseComm: 51600, bonus: 500, status: 'PAID' },
+            { id: 2, name: 'Natalija Milovic', week: '10', year: '2026', hours: 48, baseComm: 51600, bonus: 350, status: 'PENDING' },
+            { id: 3, name: 'Brill Yin', week: '10', year: '2026', hours: 41.5, baseComm: 51600, bonus: 150, status: 'PAID' },
+            { id: 4, name: 'Dayong Keef', week: '10', year: '2026', hours: 38, baseComm: 51600, bonus: 100, status: 'PENDING' }
+        ];
+
+        let expenses = [
+            { id: 1, category: 'Engine Parts', item: 'Turbocharger GT35', qty: 2, unitPrice: 2500, time: '3/6/2026, 2:23 AM', by: 'Natalija M.', status: 'Approved' },
+            { id: 2, category: 'Performance', item: 'ECU Remap Kit', qty: 5, unitPrice: 800, time: '3/6/2026, 2:22 AM', by: 'Natalija M.', status: 'Approved' },
+            { id: 3, category: 'Body Kit', item: 'Carbon Fiber Wing', qty: 1, unitPrice: 1200, time: '3/6/2026, 2:16 AM', by: 'Brill Yin', status: 'Pending' }
+        ];
+
+        let vouchers = [
+            { id: 1, code: 'BOOST10', type: 'Percent', value: 10, usage: 18, max: 50, status: 'Active' },
+            { id: 2, code: 'ENGINE500', type: 'Fixed', value: 500, usage: 7, max: 20, status: 'Active' },
+            { id: 3, code: 'VIPTUNE', type: 'Percent', value: 15, usage: 20, max: 20, status: 'Expired' }
+        ];
+
+        const popularServices = [
+            { name: 'Stage 3 Tuning Package', value: 85000 },
+            { name: 'Full Engine Rebuild', value: 72400 },
+            { name: 'Aero Body Kit Install', value: 55200 },
+            { name: 'Custom ECU Remapping', value: 42100 }
+        ];
+
+        const ranks = ['Apprentice', 'Junior Mechanic', 'Mechanic', 'Head Tuner', 'Owner'];
+        const menuItems = [
+            { key: 'employees', label: 'Mechanic Roster', icon: 'users' },
+            { key: 'wages', label: 'Payroll Pools', icon: 'dollar-sign' },
+            { key: 'expenses', label: 'Supply Chain', icon: 'package' },
+            { key: 'vouchers', label: 'Studio Promos', icon: 'ticket' },
+            { key: 'management', label: 'Analytics', icon: 'bar-chart-3' }
+        ];
+
+        let activePage = 'employees';
+
+        // --- UTILS ---
+        const formatMoney = (val) => `$${Number(val || 0).toLocaleString()}`;
+
+        function showNotice(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // --- CORE LOGIC ---
+
+        function navigateTo(page) {
+            activePage = page;
+            renderSidebar();
+            renderContent();
+            document.getElementById('page-title').textContent = page.replace('_', ' ');
+        }
+
+        function toggleExpenseModal() {
+            const modal = document.getElementById('expense-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function promoteStaff(id) {
+            employees = employees.map(e => {
+                if (e.id === id) {
+                    const nextRank = ranks[(ranks.indexOf(e.rank) + 1) % ranks.length];
+                    showNotice(`${e.name} promoted to ${nextRank}`);
+                    return { ...e, rank: nextRank };
+                }
+                return e;
+            });
+            renderContent();
+        }
+
+        function calculatePayroll() {
+            const week = document.getElementById('wage-week')?.value || "10";
+            const comm = document.getElementById('wage-comm')?.value || "20%";
+            const rev = 2580000; // Mock revenue from W10
+            const rate = parseInt(comm) / 100;
+            const pool = Math.round((rev * rate) / employees.length);
+            
+            wages = employees.map((e, idx) => ({
+                id: Date.now() + idx,
+                name: e.name,
+                week: week,
+                year: "2026",
+                hours: Math.floor(Math.random() * 40) + 10,
+                baseComm: pool,
+                bonus: 0,
+                status: 'PENDING'
+            }));
+            
+            showNotice(`Payroll for W${week} distributed: ${formatMoney(pool)} / person`);
+            renderContent();
+        }
+
+        function payWage(id) {
+            wages = wages.map(w => w.id === id ? { ...w, status: 'PAID' } : w);
+            showNotice("Settlement successful");
+            renderContent();
+        }
+
+        function submitExpenseRequest() {
+            const cat = document.getElementById('exp-category').value;
+            const item = document.getElementById('exp-item').value;
+            const qty = document.getElementById('exp-qty').value;
+            const price = document.getElementById('exp-price').value;
+
+            if(!item || !price) return showNotice("Complete all fields");
+
+            expenses.unshift({
+                id: Date.now(),
+                category: cat,
+                item: item,
+                qty: parseInt(qty),
+                unitPrice: parseInt(price),
+                time: new Date().toLocaleTimeString(),
+                by: 'Daniel U.',
+                status: 'Pending'
+            });
+
+            toggleExpenseModal();
+            showNotice("Request authorized and logged");
+            renderContent();
+        }
+
+        // --- RENDERERS ---
+
+        function renderSidebar() {
+            const nav = document.getElementById('sidebar-nav');
+            nav.innerHTML = menuItems.map(item => `
+                <button onclick="navigateTo('${item.key}')" class="flex w-full items-center gap-3 rounded-2xl px-5 py-3.5 text-xs font-bold transition-all duration-300 ${activePage === item.key ? 'sidebar-active' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}">
+                    <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+                    ${item.label}
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderContent() {
+            const container = document.getElementById('main-content');
+            container.innerHTML = '';
+
+            if (activePage === 'employees') {
+                container.innerHTML = `
+                    <div class="rounded-[32px] glass-panel premium-border card-shadow overflow-hidden">
+                        <div class="p-8 border-b border-slate-50 flex items-center justify-between">
+                            <h3 class="text-sm font-black uppercase tracking-[0.2em]">Personnel Roster</h3>
+                            <button class="rounded-xl metallic-dark px-4 py-2.5 text-[9px] font-black text-white uppercase tracking-widest shadow-lg">Recruit Master Tuner</button>
+                        </div>
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-5">Staff Identity</th>
+                                    <th class="px-8 py-5">Designation</th>
+                                    <th class="px-8 py-5">Presence</th>
+                                    <th class="px-8 py-5 text-right">Operations</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${employees.map(emp => `
+                                    <tr class="group hover:bg-slate-50/50 transition-all">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-8 w-8 rounded-lg metallic-silver border premium-border flex items-center justify-center text-[10px] font-black text-slate-500">${emp.name.split(' ').map(n=>n[0]).join('')}</div>
+                                                <span class="text-xs font-black text-slate-900 tracking-tight">${emp.name}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <span class="inline-block rounded-lg px-2.5 py-1 text-[9px] font-black uppercase border tracking-tighter ${emp.rank === 'Owner' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 premium-border'}">
+                                                ${emp.rank}
+                                            </span>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-1.5 w-1.5 rounded-full ${emp.status === 'On Duty' ? 'bg-slate-900 animate-pulse' : 'bg-slate-200'}"></div>
+                                                <span class="text-[10px] font-black uppercase ${emp.status === 'On Duty' ? 'text-slate-900' : 'text-slate-400'}">${emp.status}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-right">
+                                            <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onclick="promoteStaff(${emp.id})" class="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest">Rank Up</button>
+                                                <button class="text-[9px] font-black text-red-400/60 hover:text-red-600 uppercase tracking-widest">Revoke</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (activePage === 'wages') {
+                container.innerHTML = `
+                    <div class="grid grid-cols-[1fr_360px] gap-8 mb-8">
+                        <div class="rounded-[32px] glass-panel premium-border p-8 card-shadow">
+                            <div class="mb-8 flex items-center gap-3">
+                                <div class="p-2.5 bg-slate-100 rounded-xl text-slate-900 border premium-border"><i data-lucide="calculator" class="w-5 h-5"></i></div>
+                                <h3 class="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Pool Sharing Model</h3>
+                            </div>
+                            <div class="grid grid-cols-2 gap-10">
+                                <div class="space-y-6">
+                                    <p class="text-xs font-bold leading-relaxed text-slate-500 border-l-2 border-slate-200 pl-4">
+                                        Profit dari tuning sesi dikumpulkan dalam struktur komisi kolektif untuk tim mekanik.
+                                    </p>
+                                    <div class="rounded-2xl bg-slate-50 p-5 border premium-border text-center">
+                                        <p class="text-[9px] font-black text-slate-400 uppercase mb-3 tracking-widest">Core Formula</p>
+                                        <p class="text-sm font-black text-slate-900 tracking-tighter italic">(Revenue × Pool %) ÷ Active headcount</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4 pt-1">
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="font-bold text-slate-400 uppercase tracking-widest">Gross Revenue (W10):</span>
+                                        <span class="font-black text-slate-900">${formatMoney(2580000)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="font-bold text-slate-400 uppercase tracking-widest">Studio Pool:</span>
+                                        <span id="display-comm" class="font-black text-slate-600 underline decoration-slate-200 underline-offset-4">20%</span>
+                                    </div>
+                                    <div class="h-px bg-slate-100 w-full"></div>
+                                    <div class="bg-slate-900 rounded-2xl p-4 flex justify-between items-center text-white">
+                                        <span class="text-[9px] font-black uppercase tracking-[0.2em] opacity-60">Base / Person</span>
+                                        <span class="text-base font-black tracking-tight">${formatMoney(51600)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-[32px] border border-slate-300 bg-white p-8 card-shadow relative overflow-hidden">
+                            <div class="absolute top-0 right-0 h-32 w-32 bg-slate-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+                            <h3 class="mb-6 text-[10px] font-black uppercase text-slate-900 tracking-[0.2em]">Execution Panel</h3>
+                            <div class="space-y-5 relative z-10">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-widest">Cycle</label>
+                                        <input type="number" id="wage-week" value="10" class="w-full bg-slate-50 border premium-border rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all">
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-widest">Year</label>
+                                        <input type="number" value="2026" class="w-full bg-slate-50 border premium-border rounded-xl px-4 py-2.5 text-xs font-bold outline-none">
+                                    </div>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-widest">Pool Incentive</label>
+                                    <select id="wage-comm" class="w-full bg-slate-50 border premium-border rounded-xl px-4 py-2.5 text-xs font-bold outline-none">
+                                        <option value="20%">20% (Standard)</option>
+                                        <option value="25%">25% (High Perf.)</option>
+                                        <option value="30%">30% (Premium)</option>
+                                    </select>
+                                </div>
+                                <button onclick="calculatePayroll()" class="w-full metallic-dark py-4 rounded-xl font-black text-[10px] text-white uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-[0.98]">
+                                    Run Distribution Distribution
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-[32px] glass-panel premium-border card-shadow overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50/80 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-5">Staff Mechanic</th>
+                                    <th class="px-8 py-5">Cycle</th>
+                                    <th class="px-8 py-5">Hours</th>
+                                    <th class="px-8 py-5">Pool Settlement</th>
+                                    <th class="px-8 py-5 text-right">Settlement</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${wages.map(w => `
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="px-8 py-6 font-black text-xs text-slate-900 tracking-tight">${w.name}</td>
+                                        <td class="px-8 py-6 text-slate-400 text-[10px] font-bold">W${w.week} '26</td>
+                                        <td class="px-8 py-6 text-slate-600 font-bold text-xs">${w.hours}h</td>
+                                        <td class="px-8 py-6 text-slate-900 font-black text-xs">${formatMoney(w.baseComm)}</td>
+                                        <td class="px-8 py-6 text-right">
+                                            ${w.status === 'PAID' ? 
+                                                `<span class="text-[9px] font-black uppercase text-emerald-500 tracking-tighter">Settled</span>` : 
+                                                `<button onclick="payWage(${w.id})" class="text-[10px] font-black text-slate-900 border-b border-slate-900/10 hover:border-slate-900 transition-all uppercase">Disburse</button>`}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (activePage === 'expenses') {
+                container.innerHTML = `
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-3">
+                            <div class="h-2 w-2 rounded-full bg-slate-900"></div>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-slate-900">Inventory Acquisitions</h3>
+                        </div>
+                        <button onclick="toggleExpenseModal()" class="flex items-center gap-2 rounded-xl bg-white border premium-border px-4 py-2 text-[10px] font-black text-slate-900 uppercase tracking-widest hover:bg-slate-50 transition shadow-sm">
+                            <i data-lucide="package" class="w-3.5 h-3.5"></i> Log Shipment
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${expenses.map(ex => `
+                            <div class="rounded-3xl border premium-border bg-white/60 p-5 flex items-center justify-between card-shadow hover:border-slate-300 transition-all">
+                                <div class="flex items-center gap-5">
+                                    <div class="h-12 w-12 rounded-2xl metallic-silver border premium-border flex items-center justify-center text-slate-400">
+                                        <i data-lucide="cpu" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-black text-slate-900 tracking-tight">${ex.item}</div>
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">${ex.time} • ${ex.by}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm font-black text-slate-900 tracking-tighter">-${formatMoney(ex.qty * ex.unitPrice)}</div>
+                                    <div class="text-[9px] font-black ${ex.status === 'Approved' ? 'text-emerald-500' : 'text-amber-500'} uppercase mt-1 tracking-widest">x${ex.qty} Unit</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (activePage === 'vouchers') {
+                container.innerHTML = `
+                    <div class="grid grid-cols-3 gap-6">
+                        ${vouchers.map(v => `
+                            <div class="rounded-[32px] glass-panel premium-border p-6 card-shadow relative overflow-hidden group">
+                                <div class="absolute top-0 right-0 h-16 w-16 bg-slate-50 rotate-45 -mr-8 -mt-8 border premium-border"></div>
+                                <div class="mb-4 flex items-center justify-between relative">
+                                    <div class="text-[10px] font-black text-slate-900 tracking-widest bg-white border premium-border px-3 py-1 rounded-lg">${v.code}</div>
+                                    <span class="text-[9px] font-black uppercase tracking-widest ${v.status === 'Active' ? 'text-emerald-500' : 'text-slate-300'}">${v.status}</span>
+                                </div>
+                                <div class="text-3xl font-black text-slate-900 tracking-tighter mb-4">
+                                    ${v.type === 'Percent' ? `${v.value}% OFF` : `-$${v.value}`}
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                        <span>Utilization</span>
+                                        <span>${v.usage} / ${v.max}</span>
+                                    </div>
+                                    <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-slate-900 transition-all duration-1000" style="width: ${(v.usage/v.max)*100}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (activePage === 'management') {
+                container.innerHTML = `
+                    <div class="grid grid-cols-4 gap-6 mb-10">
+                        <div class="rounded-[32px] glass-panel premium-border p-6 flex flex-col">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Cycle Revenue</div>
+                            <div class="text-2xl font-black text-slate-900 tracking-tighter mb-1">${formatMoney(2580000)}</div>
+                            <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 w-fit">+12.4%</span>
+                        </div>
+                        <div class="rounded-[32px] glass-panel premium-border p-6"><div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tuning Success</div><div class="text-2xl font-black text-slate-900 tracking-tighter">98.4%</div></div>
+                        <div class="rounded-[32px] glass-panel premium-border p-6"><div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Inventory Burn</div><div class="text-2xl font-black text-slate-900 tracking-tighter">${formatMoney(450000)}</div></div>
+                        <div class="rounded-[32px] glass-panel premium-border p-6"><div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Active Tuners</div><div class="text-2xl font-black text-slate-900 tracking-tighter">8</div></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-10">
+                        <div class="rounded-[32px] glass-panel premium-border p-8 card-shadow">
+                            <h3 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-8 flex items-center gap-2">
+                                <i data-lucide="trophy" class="w-4 h-4"></i> Premium Services
+                            </h3>
+                            <div class="space-y-6">
+                                ${popularServices.map((s, idx) => `
+                                    <div>
+                                        <div class="mb-2 flex justify-between text-[10px] font-black uppercase tracking-tight">
+                                            <span class="text-slate-400">${idx+1}. ${s.name}</span>
+                                            <span class="text-slate-900">${formatMoney(s.value)}</span>
+                                        </div>
+                                        <div class="h-1.5 w-full bg-slate-50 rounded-full border premium-border p-[1px]">
+                                            <div class="h-full bg-slate-900 rounded-full" style="width: ${Math.random()*40 + 60}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-6">
+                            <div class="rounded-[40px] metallic-dark p-8 text-white shadow-2xl relative overflow-hidden flex-1">
+                                <div class="absolute top-0 right-0 h-32 w-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                                <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">Cycle Projection</p>
+                                <p class="text-4xl font-black tracking-tighter">$12.4M</p>
+                                <div class="mt-6 flex items-center gap-2">
+                                    <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span class="text-[9px] font-bold text-slate-400 tracking-widest">YIELD GROWTH: +8.2%</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="rounded-[28px] glass-panel premium-border p-6"><p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Cycle Orders</p><p class="text-xl font-black text-slate-900">118</p></div>
+                                <div class="rounded-[28px] glass-panel premium-border p-6"><p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Active Hours</p><p class="text-xl font-black text-slate-900">2,480</p></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (activePage === 'audit') {
+                container.innerHTML = `
+                    <div class="rounded-[32px] glass-panel premium-border card-shadow overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-5">Event</th>
+                                    <th class="px-8 py-5">Description</th>
+                                    <th class="px-8 py-5">Timestamp</th>
+                                    <th class="px-8 py-5 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50/50">
+                                    <td class="px-8 py-6 text-xs font-black text-slate-900 tracking-tight">Payroll Calculated</td>
+                                    <td class="px-8 py-6 text-xs text-slate-500">Revenue pool updated for Week 10</td>
+                                    <td class="px-8 py-6 text-[10px] font-bold text-slate-400">Mar 9, 2026 11:09 AM</td>
+                                    <td class="px-8 py-6 text-right"><span class="text-[9px] font-black uppercase text-slate-900 tracking-widest">Synced</span></td>
+                                </tr>
+                                <tr class="hover:bg-slate-50/50">
+                                    <td class="px-8 py-6 text-xs font-black text-slate-900 tracking-tight">Inventory request</td>
+                                    <td class="px-8 py-6 text-xs text-slate-500">Turbocharger GT35 x2 logged</td>
+                                    <td class="px-8 py-6 text-[10px] font-bold text-slate-400">Mar 9, 2026 10:45 AM</td>
+                                    <td class="px-8 py-6 text-right"><span class="text-[9px] font-black uppercase text-slate-900 tracking-widest">Logged</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            lucide.createIcons();
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            renderSidebar();
+            renderContent();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Restaurant POS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Menu board image viewer -->
+    <div class="container" id="image-viewer" style="display: none;">
+        <img src="" alt="" id="image" class="centered-image" onerror="this.src='https://i.ibb.co/S3wBwWH/MENU-IMAGE-NOT-ADDED.png'">
+    </div>
+
+    <!-- iPad frame + POS (Regular Register) -->
+    <div class="tablet-bezel" id="pos-register-wrapper" style="display: none;">
+        <div class="pos-container" id="pos-container">
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <div class="sidebar-brand">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item active" data-view="menu"><i class="fas fa-store"></i></li>
+                    <li class="menu-item" data-view="analytics"><i class="fas fa-chart-pie"></i></li>
+                    <li class="menu-item" data-view="receipts"><i class="fas fa-receipt"></i></li>
+                </ul>
+            </nav>
+
+            <!-- Main workspace (center) -->
+            <main class="workspace">
+                <!-- MENU VIEW -->
+                <section class="view view-menu active-view" data-view="menu">
+                    <header class="workspace-header">
+                        <h3>Menu</h3>
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search menu... (Press F)">
+                        </div>
+                    </header>
+                    
+                    <!-- NEW: Icon-Based Categories -->
+                    <nav class="category-icon-nav">
+                        <button class="cat-icon-btn active" data-category="all">
+                            <div class="cat-icon-bg"><i class="fas fa-layer-group"></i></div>
+                            <span>All</span>
+                        </button>
+                        <button class="cat-icon-btn" data-category="food">
+                            <div class="cat-icon-bg"><i class="fas fa-hamburger"></i></div>
+                            <span>Food</span>
+                        </button>
+                        <button class="cat-icon-btn" data-category="drink">
+                            <div class="cat-icon-bg"><i class="fas fa-coffee"></i></div>
+                            <span>Drinks</span>
+                        </button>
+                        <button class="cat-icon-btn" data-category="dessert">
+                            <div class="cat-icon-bg"><i class="fas fa-ice-cream"></i></div>
+                            <span>Dessert</span>
+                        </button>
+                    </nav>
+
+                    <div class="menu-gallery" id="menu-gallery"></div>
+                </section>
+
+                <!-- ANALYTICS VIEW -->
+                <section class="view view-analytics" data-view="analytics">
+                    <header class="workspace-header">
+                        <h3>Analytics</h3>
+                    </header>
+                    <div class="analytics-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Sales Today</div>
+                            <div class="stat-value" id="stat-total-sales">$0.00</div>
+                            <div class="stat-sub">Gross revenue</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Orders</div>
+                            <div class="stat-value" id="stat-total-orders">0</div>
+                            <div class="stat-sub">Completed orders today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Average Order Value</div>
+                            <div class="stat-value" id="stat-average-order-value">$0.00</div>
+                            <div class="stat-sub">Sales ÷ orders</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Best-Selling Item</div>
+                            <div class="stat-value" id="stat-best-item">—</div>
+                            <div class="stat-sub">Most sold today</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RECEIPTS VIEW -->
+                <section class="view view-receipts" data-view="receipts">
+                    <header class="workspace-header">
+                        <h3>Receipts</h3>
+                    </header>
+                    <div class="receipts-panel">
+                        <table class="receipts-table">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Total</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receipts-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Billing / Cart (right side) -->
+            <aside class="billing-section">
+                <div class="billing-header">
+                    <div>
+                        <h3 class="billing-title">My Order</h3>
+                        <p class="billing-subtitle">Review items before charging.</p>
+                    </div>
+                    <span class="billing-count-pill" id="cart-count-pill">0</span>
+                </div>
+
+                <ul class="bill-list" id="bill-list"></ul>
+
+                <!-- Smart Cart Actions Toolbar -->
+                <div class="cart-actions-toolbar">
+                    <button class="btn-cart-action" id="btn-clear-cart" title="Clear All">
+                        <i class="fas fa-trash-alt"></i> Clear
+                    </button>
+                    <button class="btn-cart-action" id="btn-discount" title="Apply 10% Discount">
+                        <i class="fas fa-tag"></i> <span>Discount 10%</span>
+                    </button>
+                </div>
+
+                <div class="billing-summary">
+                    <div class="summary-line">
+                        <span>Subtotal</span>
+                        <span id="subtotal-value">$0.00</span>
+                    </div>
+                    <div class="summary-line" id="discount-row" style="display: none; color: #16a34a;">
+                        <span>Discount</span>
+                        <span id="discount-value">-$0.00</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Tax (5%)</span>
+                        <span id="tax-value">$0.00</span>
+                    </div>
+                    <div class="summary-line total">
+                        <span>Total</span>
+                        <span id="total-value">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="nui-form-group">
+                    <label for="player-dropdown">Charge Player</label>
+                    <select id="player-dropdown"></select>
+                </div>
+
+                <!-- Service Details (Table & Notes) -->
+                <div class="nui-form-group">
+                    <div class="service-details-row">
+                        <div style="flex: 1;">
+                            <label>Table #</label>
+                            <input type="number" id="order-table-num" placeholder="#" class="input-light">
+                        </div>
+                        <div style="flex: 2;">
+                            <label>Kitchen Note</label>
+                            <input type="text" id="order-note" placeholder="e.g. No pickles" class="input-light">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nui-form-group">
+                    <label>Payment Method</label>
+                    <div class="payment-method-group">
+                        <button class="btn-payment active" data-method="bank">
+                            <i class="fas fa-credit-card"></i> Bank
+                        </button>
+                        <button class="btn-payment" data-method="cash">
+                            <i class="fas fa-money-bill-wave"></i> Cash
+                        </button>
+                    </div>
+                </div>
+
+                <div class="billing-actions">
+                    <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="btn-pay">Payment</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- iPad frame + BOSS MENU -->
+    <div class="tablet-bezel" id="boss-menu-wrapper" style="display: none;">
+        <div class="pos-container">
+            <!-- Boss Sidebar -->
+            <nav class="sidebar">
+                <div class="sidebar-brand">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item active" data-boss-view="overview"><i class="fas fa-home"></i></li>
+                    <li class="menu-item" data-boss-view="employees"><i class="fas fa-users"></i></li>
+                    <li class="menu-item" data-boss-view="society"><i class="fas fa-wallet"></i></li>
+                    <li class="menu-item" id="btn-open-recipes"><i class="fas fa-book-open"></i></li>
+                </ul>
+            </nav>
+
+            <!-- Boss Workspace -->
+            <main class="workspace">
+                
+                <!-- OVERVIEW VIEW -->
+                <section class="boss-view active-view" id="view-overview">
+                    <header class="workspace-header">
+                        <h3>Management Overview</h3>
+                    </header>
+                    
+                    <div class="analytics-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Society Balance</div>
+                            <div class="stat-value" id="boss-society-balance">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Employees</div>
+                            <div class="stat-value" id="boss-employee-count">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Top Performers Section -->
+                    <div style="margin-top: 24px;">
+                        <h4 style="margin-bottom: 12px; font-weight: 600; color: #4b5563;">Top Performers</h4>
+                        <div class="performers-list" id="boss-top-performers"></div>
+                    </div>
+                </section>
+
+                <!-- EMPLOYEES VIEW -->
+                <section class="boss-view" id="view-employees" style="display: none;">
+                    <header class="workspace-header">
+                        <h3>Employees</h3>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div class="search-bar" style="width: 180px;">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="boss-employee-search" placeholder="Search...">
+                            </div>
+                            <button class="btn btn-primary" id="btn-hire-player" style="font-size: 12px; padding: 8px 12px;">
+                                <i class="fas fa-plus"></i> Hire
+                            </button>
+                        </div>
+                    </header>
+                    <div class="receipts-panel">
+                        <table class="receipts-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Grade</th>
+                                    <th>Sales</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boss-employees-list"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SOCIETY VIEW -->
+                <section class="boss-view" id="view-society" style="display: none;">
+                    <header class="workspace-header">
+                        <h3>Society Banking</h3>
+                    </header>
+                    
+                    <div class="society-wrapper">
+                        <!-- Visual Bank Card -->
+                        <div class="society-card-visual">
+                            <div class="card-chip"></div>
+                            <div class="card-details">
+                                <span class="card-label">Society Balance</span>
+                                <h2 class="card-balance" id="boss-society-balance-card">$0.00</h2>
+                            </div>
+                            <div class="card-logo">
+                                <i class="fas fa-university"></i>
+                            </div>
+                        </div>
+
+                        <!-- Transaction Controls -->
+                        <div class="society-controls">
+                            <div class="nui-form-group centered-group">
+                                <label>Source / Destination</label>
+                                <div class="payment-method-group" style="width: 100%;">
+                                    <button class="btn-payment active" data-boss-method="cash">
+                                        <i class="fas fa-money-bill-wave"></i> Cash
+                                    </button>
+                                    <button class="btn-payment" data-boss-method="bank">
+                                        <i class="fas fa-university"></i> Bank
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="money-input-wrapper">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="boss-money-input" placeholder="0" class="big-money-input">
+                            </div>
+
+                            <!-- NEW: Quick Amount Chips -->
+                            <div class="quick-amounts">
+                                <button class="chip-amount" onclick="setBossAmount(1000)">$1k</button>
+                                <button class="chip-amount" onclick="setBossAmount(5000)">$5k</button>
+                                <button class="chip-amount" onclick="setBossAmount(10000)">$10k</button>
+                                <button class="chip-amount" onclick="setBossAmount(50000)">$50k</button>
+                            </div>
+
+                            <div class="society-actions">
+                                <button class="btn btn-action deposit" id="btn-deposit">
+                                    <div class="icon-circle"><i class="fas fa-arrow-down"></i></div>
+                                    <span>Deposit</span>
+                                </button>
+                                <button class="btn btn-action withdraw" id="btn-withdraw">
+                                    <div class="icon-circle"><i class="fas fa-arrow-up"></i></div>
+                                    <span>Withdraw</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+        
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <button class="btn btn-secondary" id="btn-close-boss">Close</button>
+        </div>
+    </div>
+
+    <!-- KDS overlay for kitchen tickets -->
+    <div id="kds-container" class="kds-overlay"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

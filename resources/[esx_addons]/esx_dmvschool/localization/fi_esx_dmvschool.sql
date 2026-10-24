@@ -1,0 +1,9 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+INSERT INTO `licenses` (`type`, `label`) VALUES
+	('dmv', 'Teoriakoe'),
+	('drive', 'Autokortti'),
+	('drive_bike', 'Moottoripyöräkortti'),
+	('drive_truck', 'Rekkakortti')
+;

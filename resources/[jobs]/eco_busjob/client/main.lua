@@ -7,6 +7,7 @@ local abandonedTimer = 0
 local timerActive = false
 local busPassengers = {}
 local hasAnnouncedStop = false
+local isRouteFinished = false
 
 local function DrawText3D(x, y, z, text)
     local onScreen, _x, _y = World3dToScreen2d(x, y, z)
@@ -26,8 +27,8 @@ local function UpdateBusHUD(stateText)
     local stop = Config.MetroStops[currentStopIndex]
     SendNUIMessage({
         action = "updateStop",
-        stopName = stop and stop.name or "Selesai",
-        current = currentStopIndex,
+        stopName = isRouteFinished and "Terminal (Selesai)" or (stop and stop.name or "Selesai"),
+        current = math.min(currentStopIndex, #Config.MetroStops),
         total = #Config.MetroStops,
         stateText = stateText or "Menuju halte..."
     })
@@ -54,6 +55,7 @@ end
 
 local function CleanUpJob(deleteBus)
     isOnDuty = false
+    isRouteFinished = false
     currentStopIndex = 1
     isHandlingPassengers = false
     timerActive = false
@@ -159,6 +161,14 @@ local function HandlePassengersAtStop(stop)
     FreezeEntityPosition(currentBus, false)
     SetVehicleHandbrake(currentBus, false)
     isHandlingPassengers = false
+
+    if currentStopIndex == #Config.MetroStops then
+        Wait(1000)
+        SendNUIMessage({
+            action = "announceStop",
+            stopName = "This bus is now out of service. Please make sure you have all your personal belongings. Have a great day!"
+        })
+    end
 end
 
 local function SpawnJobBus()
@@ -174,6 +184,7 @@ local function SpawnJobBus()
 
     currentStopIndex = 1
     isOnDuty = true
+    isRouteFinished = false
 
     SendNUIMessage({ action = "showHud" })
     SetRouteToStop(currentStopIndex)
@@ -185,7 +196,11 @@ local function OpenBusMenu()
     if not isOnDuty then
         table.insert(elements, {label = 'Mulai Dinas Supir Bus (Deposit: $' .. Config.Deposit .. ')', value = 'start'})
     else
-        table.insert(elements, {label = 'Batalkan Pekerjaan (Exit Job - Tanpa Reward)', value = 'quit'})
+        if isRouteFinished then
+            table.insert(elements, {label = 'Selesaikan Shift & Ambil Reward ($' .. Config.Reward .. ')', value = 'finish'})
+        else
+            table.insert(elements, {label = 'Batalkan Pekerjaan (Exit Job - Tanpa Reward)', value = 'quit'})
+        end
     end
 
     ESX.UI.Menu.CloseAll()
@@ -203,6 +218,9 @@ local function OpenBusMenu()
                     SpawnJobBus()
                 end
             end)
+        elseif data.current.value == 'finish' then
+            TriggerServerEvent('esx_busjob:returnBus', false)
+            CleanUpJob(true)
         elseif data.current.value == 'quit' then
             ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'bus_confirm_quit', {
                 title    = 'TIDAK MENDAPATKAN REWARD JIKA KELUAR! Yakin?',
@@ -226,6 +244,7 @@ local function OpenBusMenu()
     end)
 end
 
+-- Marker Interaksi Depot / Terminal
 CreateThread(function()
     while true do
         local sleep = 1000
@@ -248,57 +267,63 @@ CreateThread(function()
     end
 end)
 
+-- Loop Pengendalian Titik Halte Bus & Terminal Selesai
 CreateThread(function()
     while true do
         local sleep = 1000
         if isOnDuty and currentBus and DoesEntityExist(currentBus) then
             local playerPed = PlayerPedId()
             local pCoords = GetEntityCoords(playerPed)
-            local stop = Config.MetroStops[currentStopIndex]
 
-            if stop then
-                local stopCoords = vector3(stop.x, stop.y, stop.z)
-                local dist = #(pCoords - stopCoords)
+            if not isRouteFinished then
+                local stop = Config.MetroStops[currentStopIndex]
 
-                if dist < 50.0 and not hasAnnouncedStop and IsPedInVehicle(playerPed, currentBus, false) then
-                    hasAnnouncedStop = true
-                    SendNUIMessage({
-                        action = "announceStop",
-                        stopName = stop.announceStop or stop.name
-                    })
-                end
+                if stop then
+                    local stopCoords = vector3(stop.x, stop.y, stop.z)
+                    local dist = #(pCoords - stopCoords)
 
-                if dist < 45.0 then
-                    sleep = 0
-                    DrawMarker(1, stop.x, stop.y, stop.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 1.0, 72, 202, 228, 150, false, false, 2, false, nil, nil, false)
+                    if dist < 50.0 and not hasAnnouncedStop and IsPedInVehicle(playerPed, currentBus, false) then
+                        hasAnnouncedStop = true
+                        SendNUIMessage({
+                            action = "announceStop",
+                            stopName = stop.announceText or stop.name
+                        })
+                    end
 
-                    if dist < 4.5 and IsPedInVehicle(playerPed, currentBus, false) and not isHandlingPassengers then
-                        DrawText3D(stop.x, stop.y, stop.z + 1.0, "[E] Buka Pintu & Proses Halte")
-                        if IsControlJustReleased(0, 38) then
-                            HandlePassengersAtStop(stop)
+                    if dist < 45.0 then
+                        sleep = 0
+                        DrawMarker(1, stop.x, stop.y, stop.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 1.0, 72, 202, 228, 150, false, false, 2, false, nil, nil, false)
 
-                            if currentStopIndex < #Config.MetroStops then
-                                currentStopIndex = currentStopIndex + 1
-                                SetRouteToStop(currentStopIndex)
-                                ESX.ShowNotification("Halte selesai. Silakan menuju titik berikutnya.")
-                            else
-                                TriggerServerEvent('esx_busjob:finishRoute')
-                                if routeBlip then RemoveBlip(routeBlip) end
-                                routeBlip = AddBlipForCoord(Config.SpawnPoint.x, Config.SpawnPoint.y, Config.SpawnPoint.z)
-                                SetBlipSprite(routeBlip, 357)
-                                SetBlipColour(routeBlip, 2)
-                                SetBlipRoute(routeBlip, true)
-                                UpdateBusHUD("Semua rute beres! Kembalikan bus ke Terminal.")
-                                ESX.ShowNotification("Semua rute beres! Bawa bus kembali ke terminal.")
+                        if dist < 4.5 and IsPedInVehicle(playerPed, currentBus, false) and not isHandlingPassengers then
+                            DrawText3D(stop.x, stop.y, stop.z + 1.0, "[E] Buka Pintu & Proses Halte")
+                            if IsControlJustReleased(0, 38) then
+                                HandlePassengersAtStop(stop)
+
+                                if currentStopIndex < #Config.MetroStops then
+                                    currentStopIndex = currentStopIndex + 1
+                                    SetRouteToStop(currentStopIndex)
+                                    ESX.ShowNotification("Halte selesai. Silakan menuju titik berikutnya.")
+                                else
+                                    isRouteFinished = true
+                                    TriggerServerEvent('esx_busjob:finishRoute')
+                                    if routeBlip then RemoveBlip(routeBlip) end
+                                    routeBlip = AddBlipForCoord(Config.SpawnPoint.x, Config.SpawnPoint.y, Config.SpawnPoint.z)
+                                    SetBlipSprite(routeBlip, 357)
+                                    SetBlipColour(routeBlip, 2)
+                                    SetBlipRoute(routeBlip, true)
+                                    UpdateBusHUD("Kembalikan bus ke Terminal.")
+                                    ESX.ShowNotification("Semua rute beres! Bawa bus kembali ke terminal.")
+                                end
                             end
                         end
                     end
                 end
             else
+                -- Rute selesai, buka marker hijau pengembalian bus di terminal
                 local spawnV3 = vector3(Config.SpawnPoint.x, Config.SpawnPoint.y, Config.SpawnPoint.z)
                 local distToTerminal = #(pCoords - spawnV3)
 
-                if distToTerminal < 15.0 and IsPedInVehicle(playerPed, currentBus, false) then
+                if distToTerminal < 20.0 and IsPedInVehicle(playerPed, currentBus, false) then
                     sleep = 0
                     DrawMarker(1, spawnV3.x, spawnV3.y, spawnV3.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 1.0, 50, 255, 50, 150, false, false, 2, false, nil, nil, false)
                     DrawText3D(spawnV3.x, spawnV3.y, spawnV3.z + 1.0, "[E] Selesaikan Shift & Simpan Bus")
@@ -313,6 +338,7 @@ CreateThread(function()
     end
 end)
 
+-- Loop Monitor Timer Meninggalkan Bus (3 Menit)
 CreateThread(function()
     while true do
         Wait(1000)

@@ -1,3 +1,0 @@
-- Textures can be modified via `stream\int\textures` and `stream\ext\textures`
-- client.lua and config.lua allow the loading of the shooting range entity set (fixed targets). You can remove this entirely or use your own script to load the entity set.
-- Support Discord server: https://discord.gg/UQJycd5cXu

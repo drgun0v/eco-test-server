@@ -71,3 +71,9 @@ AddEventHandler('playerDropped', function()
         ActiveDrivers[src] = nil
     end
 end)
+
+ESX.RegisterCommand('skipbusroute', 'admin', function(xPlayer, args, showError)
+    if xPlayer then
+        xPlayer.triggerEvent('esx_busjob:skipToLastStop')
+    end
+end, false, {help = 'Skip rute bus ke halte terakhir (Khusus Admin)'})

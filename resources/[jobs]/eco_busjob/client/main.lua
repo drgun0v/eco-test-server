@@ -90,8 +90,10 @@ local function HandlePassengersAtStop(stop)
     Wait(300)
     SendNUIMessage({ action = "playDoorChime" })
 
-    SetVehicleDoorOpen(currentBus, 0, false, false)
+    -- Buka pintu penumpang depan dan tengah/belakang (indeks 1, 2, dan 3)
     SetVehicleDoorOpen(currentBus, 1, false, false)
+    SetVehicleDoorOpen(currentBus, 2, false, false)
+    SetVehicleDoorOpen(currentBus, 3, false, false)
 
     local numToLeave = 0
     if stop.unloadType == UnloadType.All then
@@ -152,8 +154,10 @@ local function HandlePassengersAtStop(stop)
     SendNUIMessage({ action = "playDoorChime" })
     Wait(1000)
 
-    SetVehicleDoorShut(currentBus, 0, false)
+    -- Tutup pintu penumpang depan dan tengah/belakang
     SetVehicleDoorShut(currentBus, 1, false)
+    SetVehicleDoorShut(currentBus, 2, false)
+    SetVehicleDoorShut(currentBus, 3, false)
 
     Wait(500)
     SendNUIMessage({ action = "playAirBrakes" })
@@ -363,4 +367,20 @@ CreateThread(function()
             end
         end
     end
+end)
+
+RegisterNetEvent('esx_busjob:skipToLastStop', function()
+    if not isOnDuty or not currentBus or not DoesEntityExist(currentBus) then
+        ESX.ShowNotification("Anda tidak sedang bertugas sebagai supir bus.")
+        return
+    end
+
+    if isRouteFinished then
+        ESX.ShowNotification("Rute sudah selesai! Silakan bawa bus kembali ke terminal.")
+        return
+    end
+
+    currentStopIndex = #Config.MetroStops
+    SetRouteToStop(currentStopIndex)
+    ESX.ShowNotification("[ADMIN] Rute dilewati! Menuju halte terakhir: " .. Config.MetroStops[currentStopIndex].name)
 end)

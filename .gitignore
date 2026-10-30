@@ -37,7 +37,6 @@ db/
 server.cfg
 !server.cfg.example
 # Abaikan folder vehicle & mapping / mlo
-resources/[vehicle]/
 resources/[mlo]/
 resources/**/[vehicle]/
 resources/**/[mlo]/

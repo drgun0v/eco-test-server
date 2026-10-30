@@ -1,0 +1,2 @@
+Model Name: mxc_pizzathis_prop_tvmain
+RenderTarget Name: tvscreen

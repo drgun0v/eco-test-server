@@ -1,12 +1,14 @@
 local activeRouteBuses = {}
-local lastSpawnTime = 0
+local lastSpawnTimeByRoute = {}
 
-local function GetActiveBusCount()
+local function GetActiveBusCountForRoute(routeId)
     local count = 0
-    for netId, _ in pairs(activeRouteBuses) do
+    for netId, info in pairs(activeRouteBuses) do
         local entity = NetworkGetEntityFromNetworkId(netId)
         if DoesEntityExist(entity) then
-            count = count + 1
+            if info.routeId == routeId then
+                count = count + 1
+            end
         else
             activeRouteBuses[netId] = nil
         end
@@ -14,52 +16,68 @@ local function GetActiveBusCount()
     return count
 end
 
--- Thread Otomatis Headway
 CreateThread(function()
+    while Config == nil or Config.Routes == nil do
+        Wait(100)
+    end
+
+    local lastGlobalDispatchTime = 0
+
     while true do
         Wait(5000)
         local currentTime = os.time()
-        local currentActiveCount = GetActiveBusCount()
-        local maxBuses = (Config and Config.MaxBusesPerRoute) or 3
-        local headway = (Config and Config.HeadwaySeconds) or 180
+        local routes = Config.Routes or { [1] = { id = 1, name = 'Route 1', stops = Config.RouteLoop } }
 
-        if currentActiveCount < maxBuses then
-            local shouldSpawn = false
-            if not lastSpawnTime or lastSpawnTime == 0 then
-                shouldSpawn = true
-            elseif (currentTime - lastSpawnTime) >= headway then
-                shouldSpawn = true
-            end
+        for routeId, routeData in ipairs(routes) do
+            local currentActiveCount = GetActiveBusCountForRoute(routeId)
+            local maxBuses = routeData.maxBuses or Config.MaxBusesPerRoute or 2
+            local headway = routeData.headwaySeconds or Config.HeadwaySeconds or 180
+            local lastSpawn = lastSpawnTimeByRoute[routeId] or 0
 
-            if shouldSpawn then
-                local players = GetPlayers()
-                if #players > 0 then
-                    local targetPlayer = tonumber(players[math.random(1, #players)])
-                    lastSpawnTime = currentTime
-                    print(('[eco_bus] Dispatching bus rute ke Player ID: %s'):format(targetPlayer))
-                    TriggerClientEvent('eco_bus:client:dispatchNewBus', targetPlayer, 1)
+            if currentActiveCount < maxBuses then
+                local shouldSpawn = false
+                if lastSpawn == 0 then
+                    shouldSpawn = true
+                elseif (currentTime - lastSpawn) >= headway then
+                    shouldSpawn = true
+                end
+
+                if shouldSpawn and (currentTime - lastGlobalDispatchTime) >= 35 then
+                    local players = GetPlayers()
+                    if #players > 0 then
+                        local targetPlayer = tonumber(players[math.random(1, #players)])
+                        lastSpawnTimeByRoute[routeId] = currentTime
+                        lastGlobalDispatchTime = currentTime
+                        print(('[eco_bus] Dispatching bus [Rute #%s: %s] ke Player ID: %s'):format(routeId, routeData.name or routeId, targetPlayer))
+                        TriggerClientEvent('eco_bus:client:dispatchNewBus', targetPlayer, routeId, 1)
+                        break
+                    end
                 end
             end
         end
     end
 end)
 
--- Command Test Langsung: Ketik /testbus di chat atau F8
-RegisterCommand('testbus', function(source)
+RegisterCommand('testbus', function(source, args)
     local src = source
+    local routeId = tonumber(args[1]) or 1
+    if not Config.Routes or not Config.Routes[routeId] then
+        routeId = 1
+    end
+    local routeName = (Config.Routes and Config.Routes[routeId] and Config.Routes[routeId].name) or ("Route " .. routeId)
+
     if src == 0 then
         local players = GetPlayers()
         if #players > 0 then
-            TriggerClientEvent('eco_bus:client:dispatchNewBus', tonumber(players[1]), 1)
-            print('[eco_bus] Bus test diberangkatkan via konsol server!')
+            TriggerClientEvent('eco_bus:client:dispatchNewBus', tonumber(players[1]), routeId, 1)
+            print(('[eco_bus] Bus test [%s] diberangkatkan via konsol server!'):format(routeName))
         end
     else
-        TriggerClientEvent('eco_bus:client:dispatchNewBus', src, 1)
-        TriggerClientEvent('esx:showNotification', src, '~g~[eco_bus] Memerintahkan spawn bus ke halte 1...~s~')
+        TriggerClientEvent('eco_bus:client:dispatchNewBus', src, routeId, 1)
+        TriggerClientEvent('esx:showNotification', src, ('~g~[eco_bus] Memerintahkan spawn bus (%s) ke halte 1...~s~'):format(routeName))
     end
 end, false)
 
--- Validasi Ongkos
 RegisterNetEvent('eco_bus:server:payBoarding', function(netVeh)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
@@ -99,10 +117,11 @@ RegisterNetEvent('eco_bus:server:payBoarding', function(netVeh)
     end
 end)
 
-RegisterNetEvent('eco_bus:server:registerScheduledBus', function(netVeh)
-    activeRouteBuses[netVeh] = { spawnedAt = os.time() }
-    print(('[eco_bus] Bus berhasil terdaftar di server. NetID: %s'):format(netVeh))
-    TriggerClientEvent('eco_bus:client:syncScheduledBlip', -1, netVeh)
+RegisterNetEvent('eco_bus:server:registerScheduledBus', function(netVeh, routeId)
+    routeId = routeId or 1
+    activeRouteBuses[netVeh] = { routeId = routeId, spawnedAt = os.time() }
+    print(('[eco_bus] Bus [Rute #%s] berhasil terdaftar di server. NetID: %s'):format(routeId, netVeh))
+    TriggerClientEvent('eco_bus:client:syncScheduledBlip', -1, netVeh, routeId)
 end)
 
 RegisterNetEvent('eco_bus:server:removeScheduledBus', function(netVeh)

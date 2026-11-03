@@ -15,7 +15,6 @@ local function GetActiveTrainCount()
     return count
 end
 
--- Helper menyusun paket telemetri kereta aktif untuk PIDS & Schedule
 local function BuildTelemetrySnapshot()
     local now = os.time()
     local validTrains = {}
@@ -46,7 +45,6 @@ local function BuildTelemetrySnapshot()
     return validTrains, nextDispatchIn
 end
 
--- Thread Penjadwalan Headway Otomatis
 CreateThread(function()
     while true do
         Wait(5000)
@@ -77,7 +75,6 @@ CreateThread(function()
     end
 end)
 
--- Thread Sinkronisasi Live Telemetry untuk PIDS Peron Stasiun (Setiap 2 Detik)
 CreateThread(function()
     while true do
         Wait(2000)

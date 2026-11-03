@@ -1,7 +1,7 @@
 Config = {}
 
 Config.HeadwaySeconds = 240 -- Interval antar kereta metro (4 menit)
-Config.MaxTrainsPerRoute = 2 -- Maksimal rangkaian kereta aktif di jalur LST
+Config.MaxTrainsPerRoute = 6 -- Maksimal rangkaian kereta aktif di jalur LST
 
 -- Sistem Tiket / Tarif
 Config.TicketRequired = true
@@ -31,8 +31,9 @@ Config.DrawPlatformMarker = true -- Tampilkan PIDS (Layar LED Jadwal Real-Time) 
 Config.PIDSDrawDistance = 28.0   -- Jarak maksimal pemain melihat layar PIDS di peron
 Config.PIDSHeightOffset = 2.15   -- Ketinggian layar PIDS dari lantai peron (bisa disesuaikan)
 
--- Ketinggian duduk di bangku kabin
+-- Ketinggian duduk di bangku kabin & ketinggian berdiri di lorong kabin
 Config.DefaultSeatZ = 0.68
+Config.StandingAisleZ = 1.22 -- Ketinggian panggul ped saat berdiri di atas lantai gerbong (mencegah tenggelam tembus lantai)
 
 -- Daftar Offset Kursi Penumpang di Dalam Gerbong `metrotrain`
 Config.SeatOffsets = {
@@ -47,7 +48,6 @@ Config.SeatOffsets = {
 }
 
 -- Daftar 10 Stasiun Resmi Los Santos Transit (LST Metro Loop)
--- Anda dapat menambahkan `pidsCoords = vector3(x, y, z)` pada stasiun tertentu jika ingin menggeser posisi layar PIDS
 Config.Stations = {
     { id = 1,  name = 'LSIA Terminal 4',      coords = vector3(-1088.62, -2709.35, -7.41) },
     { id = 2,  name = 'LSIA Parking',         coords = vector3(-889.27, -2311.83, -11.73) },

@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Dragunov'
 description 'Custom Networked Autonomous Public Transit System'
-version '1.3.0'
+version '2.0.0'
 
 shared_scripts {
     '@es_extended/imports.lua',
@@ -12,9 +12,11 @@ shared_scripts {
 }
 
 client_scripts {
+    'config.lua',
     'client/main.lua'
 }
 
 server_scripts {
+    'config.lua',
     'server/main.lua'
 }

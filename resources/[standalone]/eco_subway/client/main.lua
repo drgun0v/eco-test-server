@@ -3,16 +3,18 @@ local spawnedTrains = {}
 local stationBlips = {}
 local cachedMetroVariation = nil
 
--- Cache Live Telemetry untuk PIDS (Passenger Information Display System)
+-- Cache Live Telemetry untuk PIDS
 local livePIDSTrains = {}
 local liveNextDispatchIn = 0
 
+-- State Penumpang di Dalam Kabin
 local hasPaidCurrentRide = false
 local currentPaidCarriage = nil
 local isSittingInMetro = false
 local sittingCarriage = nil
 local currentSeatIndex = 1
 local customSeatZAdjust = 0.0
+local savedStandingZ = nil -- Menyimpan tinggi lantai kabin asli sebelum duduk agar saat berdiri tidak tembus bawah kereta
 local paymentPending = false
 
 local function DrawText3D(x, y, z, text)
@@ -30,53 +32,87 @@ local function DrawText3D(x, y, z, text)
     end
 end
 
--- =========================================================================
--- RENDERER PAPAN INFORMASI ELEKTRONIK (PIDS - LED DISPLAY BOARD DI PERON)
--- =========================================================================
-local function DrawPIDSScreen3D(x, y, z, stationTitle, line1, line2, statusColor)
+-- ============================================================
+-- PIDS GAYA LONDON UNDERGROUND (dot-matrix amber di panel hitam)
+-- ============================================================
+local PIDS_STYLE = {
+    amber  = { 255, 176, 0, 255 },
+    white  = { 255, 255, 255, 255 },
+    blue   = { 0, 25, 168 },      -- biru TfL
+    red    = { 220, 36, 31 },     -- merah roundel
+    bezel  = { 45, 47, 52 },
+    width  = 0.27,                -- lebar panel (layar, skala 1.0)
+    rowH   = 0.028,               -- tinggi tiap baris
+    textScale = 0.30,
+    textNudge = 0.002,            -- geser teks vertikal di dalam baris (kalau terlihat naik/turun, ubah ini)
+}
+
+local function DrawLED(text, x, y, scale, col, align)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextScale(scale, scale)
+    SetTextColour(col[1], col[2], col[3], col[4] or 255)
+    if align == 'center' then
+        SetTextCentre(true)
+    elseif align == 'right' then
+        SetTextRightJustify(true)
+        SetTextWrap(0.0, x)
+    end
+    SetTextEntry("STRING")
+    AddTextComponentString(text)
+    DrawText(x, y)
+end
+
+local function DrawPIDSBoard(x, y, z, board)
     local onScreen, sx, sy = World3dToScreen2d(x, y, z)
     if not onScreen then return end
 
-    local camCoords = GetGameplayCamCoords()
-    local dist = #(camCoords - vector3(x, y, z))
-    local scale = math.max(0.24, math.min(0.42, (1.0 / dist) * 2.5))
+    local dist = #(GetGameplayCamCoords() - vector3(x, y, z))
+    local s = math.max(0.5, math.min(1.0, 7.0 / dist))
 
-    -- Background Panel Hitam PIDS + Frame Border Atas Biru LST
-    DrawRect(sx, sy + 0.012, 0.255, 0.076, 12, 16, 23, 225)
-    DrawRect(sx, sy - 0.024, 0.255, 0.005, statusColor.r, statusColor.g, statusColor.b, 240)
+    local W = PIDS_STYLE.width * s
+    local rowH = PIDS_STYLE.rowH * s
+    local H = rowH * 4 + 0.006 * s
+    local left, right, top = sx - W / 2, sx + W / 2, sy - H / 2
+    local pad = 0.007 * s
+    local ts = PIDS_STYLE.textScale * s
+    local nudge = PIDS_STYLE.textNudge * s
 
-    -- Baris Header: Nama Stasiun
-    SetTextScale(scale * 0.78, scale * 0.78)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(56, 189, 248, 255)
-    SetTextCentre(1)
-    SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString(stationTitle)
-    DrawText(sx, sy - 0.022)
+    -- bezel + layar hitam
+    DrawRect(sx, sy, W + 0.006 * s, H + 0.008 * s, PIDS_STYLE.bezel[1], PIDS_STYLE.bezel[2], PIDS_STYLE.bezel[3], 255)
+    DrawRect(sx, sy, W, H, 0, 0, 0, 250)
 
-    -- Baris Utama LED: Status Kereta Berikutnya & Hitung Mundur
-    SetTextScale(scale * 0.90, scale * 0.90)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(255, 255, 255, 255)
-    SetTextCentre(1)
-    SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString(line1)
-    DrawText(sx, sy + 0.002)
+    -- header: blok merah "LST" + bar biru nama stasiun + jam
+    DrawRect(sx, top + rowH / 2, W, rowH, PIDS_STYLE.blue[1], PIDS_STYLE.blue[2], PIDS_STYLE.blue[3], 255)
+    DrawRect(left + 0.018 * s, top + rowH / 2, 0.036 * s, rowH, PIDS_STYLE.red[1], PIDS_STYLE.red[2], PIDS_STYLE.red[3], 255)
+    DrawLED("LST", left + 0.018 * s, top + nudge, ts, PIDS_STYLE.white, 'center')
+    DrawLED(board.station, left + 0.042 * s, top + nudge, ts, PIDS_STYLE.white, 'left')
+    DrawLED(("%02d:%02d"):format(GetClockHours(), GetClockMinutes()), right - pad, top + nudge, ts, PIDS_STYLE.white, 'right')
 
-    -- Baris Footer: Informasi Tambahan / Tujuan Berikutnya
-    SetTextScale(scale * 0.70, scale * 0.70)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(190, 200, 215, 230)
-    SetTextCentre(1)
-    SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString(line2)
-    DrawText(sx, sy + 0.026)
+    -- baris 1 & 2: jadwal kereta
+    for i = 1, 2 do
+        local rowTop = top + rowH * i
+        local row = board.rows[i]
+        if row then
+            DrawLED(tostring(i), left + pad, rowTop + nudge, ts, PIDS_STYLE.amber, 'left')
+            DrawLED(row.dest, left + pad + 0.016 * s, rowTop + nudge, ts, PIDS_STYLE.amber, 'left')
+            DrawLED(row.time, right - pad, rowTop + nudge, ts, PIDS_STYLE.amber, 'right')
+        end
+    end
+
+    -- garis pemisah + baris pesan (bawah)
+    local msgTop = top + rowH * 3
+    DrawRect(sx, msgTop + 0.001 * s, W - pad * 2, 0.0012 * s, 255, 176, 0, 70)
+
+    local msg = board.messages[1] or ""
+    if not board.urgent and #board.messages > 1 then
+        msg = board.messages[(math.floor(GetGameTimer() / 4000) % #board.messages) + 1]
+    end
+    DrawLED(msg, left + pad, msgTop + nudge + 0.002 * s, ts, PIDS_STYLE.amber, 'left')
+
+    -- strip status tipis di dasar panel
+    local c = board.color
+    DrawRect(sx, top + H - 0.0025 * s, W, 0.005 * s, c.r, c.g, c.b, 240)
 end
 
 local bannedFreightModels = {
@@ -229,12 +265,24 @@ local function ApplySeatAttachment(playerPed, carriage, seatData)
     )
 end
 
+-- =========================================================================
+-- PERBAIKAN DUDUK & BERDIRI DI KABIN (ANTI TENGGELAM TEMBUS LANTAI KERETA)
+-- =========================================================================
 local function SitInMetroSeat(carriage, seatIndex)
     if not DoesEntityExist(carriage) then return end
     local seatData = Config.SeatOffsets[seatIndex]
     if not seatData then return end
 
     local playerPed = PlayerPedId()
+
+    -- Rekam ketinggian panggul ped saat sedang berdiri di lantai kabin sebelum duduk
+    if not isSittingInMetro and IsPedInsideMetroCabin(playerPed, carriage) then
+        local currentOffset = GetOffsetFromEntityGivenWorldCoords(carriage, GetEntityCoords(playerPed))
+        if currentOffset.z >= 0.85 and currentOffset.z <= 1.65 then
+            savedStandingZ = currentOffset.z + 0.05
+        end
+    end
+
     local animDict = "amb@prop_human_seat_chair_mp@male@generic@base"
     RequestAnimDict(animDict)
     local timeout = 0
@@ -260,13 +308,21 @@ local function StandUpFromMetroSeat()
     isSittingInMetro = false
     sittingCarriage = nil
 
-    DetachEntity(playerPed, true, false)
-    ClearPedTasks(playerPed)
+    -- PENTING: Parameter ke-3 DetachEntity HARUS `true` agar kolisi fisik kaki pemain dengan lantai kereta langsung aktif!
+    DetachEntity(playerPed, true, true)
+    SetEntityCollision(playerPed, true, true)
+    ClearPedTasksImmediately(playerPed)
 
     if DoesEntityExist(targetCar) then
         local seatData = Config.SeatOffsets[currentSeatIndex] or Config.SeatOffsets[1]
-        local aislePos = GetOffsetFromEntityInWorldCoords(targetCar, 0.0, seatData.offset.y, 0.68)
+        -- Ketinggian panggul saat berdiri di atas lantai kabin adalah ~1.22m (bukan 0.68m yang membuat kaki di bawah lantai!)
+        local standZ = savedStandingZ or (Config.StandingAisleZ or 1.22)
+        local aislePos = GetOffsetFromEntityInWorldCoords(targetCar, 0.0, seatData.offset.y, standZ)
+
         SetEntityCoordsNoOffset(playerPed, aislePos.x, aislePos.y, aislePos.z, false, false, false)
+        -- Samakan kecepatan gerak pemain dengan kereta agar tidak melorot jika berdiri saat kereta berjalan
+        local trainVel = GetEntityVelocity(targetCar)
+        SetEntityVelocity(playerPed, trainVel.x, trainVel.y, trainVel.z)
     end
 end
 
@@ -332,7 +388,12 @@ local function SpawnVerifiedMetroTrain(x, y, z, direction)
     return 0
 end
 
-local function SetMetroDoors(train, shouldOpen, stationName)
+-- =========================================================================
+-- KONTROL PINTU GESER METROTRAIN ANTI BUKA-TUTUP SENDIRI (OVERRIDE CTrain AI)
+-- =========================================================================
+-- Di GTA V, engine CTrain otomatis membuka paksa pintu kereta jika `TrainSpeed == 0.0`
+-- dan terdapat NPC di kursi masinis. Fungsi ini meng-override CTrain door controller!
+local function ApplyDoorsStateOnce(train, shouldOpen, stationName)
     if not DoesEntityExist(train) then return end
     local carriage = GetTrainCarriage(train, 1)
     local entities = { train }
@@ -352,14 +413,63 @@ local function SetMetroDoors(train, shouldOpen, stationName)
                 SetVehicleDoorOpen(veh, d, false, false)
             end
         else
+            SetVehicleDoorsLocked(veh, 2)
             for d = 0, 5 do
                 SetVehicleDoorShut(veh, d, false)
             end
-            SetVehicleDoorsShut(veh, false)
-            SetVehicleDoorsLocked(veh, 2)
         end
     end
 end
+
+-- Mengunci rapat posisi pintu (0.0 = tertutup penuh) setiap frame saat pintu ditutup / saat kereta melaju
+local function ForceKeepMetroDoorsClosed(train)
+    if not DoesEntityExist(train) then return end
+    local carriage = GetTrainCarriage(train, 1)
+    local entities = { train }
+    if DoesEntityExist(carriage) and carriage ~= 0 then
+        table.insert(entities, carriage)
+    end
+
+    for _, veh in ipairs(entities) do
+        SetVehicleDoorsLocked(veh, 2)
+        for d = 0, 5 do
+            -- Kunci rasio bukaan pintu di 0.0 dan paksa shut tanpa me-reset animasi
+            if GetVehicleDoorAngleRatio(veh, d) > 0.01 then
+                SetVehicleDoorControl(veh, d, 5, 0.0)
+                SetVehicleDoorShut(veh, d, true)
+            end
+        end
+        SetVehicleDoorsShut(veh, true)
+    end
+end
+
+-- Thread Background: Memastikan semua kereta `metrotrain` yang sedang TIDAK boarding (`isMetroBoarding == false`)
+-- pintunya selalu terkunci rapat setiap frame (menghentikan bug pintu terbuka saat kereta melaju!)
+CreateThread(function()
+    while true do
+        local sleep = 500
+        local vehicles = GetGamePool('CVehicle')
+
+        for _, veh in ipairs(vehicles) do
+            if DoesEntityExist(veh) and GetEntityModel(veh) == `metrotrain` then
+                local isBoarding = Entity(veh).state.isMetroBoarding
+                if isBoarding == false then
+                    sleep = 0
+                    SetVehicleDoorsLocked(veh, 2)
+                    for d = 0, 5 do
+                        if GetVehicleDoorAngleRatio(veh, d) > 0.01 then
+                            SetVehicleDoorControl(veh, d, 5, 0.0)
+                            SetVehicleDoorShut(veh, d, true)
+                        end
+                    end
+                    SetVehicleDoorsShut(veh, true)
+                end
+            end
+        end
+
+        Wait(sleep)
+    end
+end)
 
 RegisterNetEvent('eco_subway:client:stationAnnouncement', function(netTrain, stationIdx, status)
     if not NetworkDoesNetworkIdExist(netTrain) then return end
@@ -391,11 +501,13 @@ local function PerformStationStop(train, stationIdx)
 
     local netTrain = NetworkGetNetworkIdFromEntity(train)
 
+    -- 1. Berhenti sepenuhnya di peron
     SetTrainSpeed(train, 0.0)
     SetTrainCruiseSpeed(train, 0.0)
     Wait(500)
 
-    SetMetroDoors(train, true, station.name)
+    -- 2. Buka pintu (Panggil 1 kali saja agar animasi mulus, tidak di-loop!)
+    ApplyDoorsStateOnce(train, true, station.name)
     TriggerServerEvent('eco_subway:server:updateTrainStatus', netTrain, stationIdx, "STOPPED")
     print(('^2[eco_subway] Kereta NetID %s berhenti di %s - Pintu Terbuka (%s detik)^7'):format(netTrain, station.name, Config.Train.WaitAtStationSeconds or 15))
 
@@ -411,25 +523,56 @@ local function PerformStationStop(train, stationIdx)
 
     if not DoesEntityExist(train) then return end
 
+    -- 3. Peringatan & Animasi Penutupan Pintu Halus (Tanpa memanggil ulang SetVehicleDoorShut tiap detik yang bikin buka-tutup!)
     TriggerServerEvent('eco_subway:server:updateTrainStatus', netTrain, stationIdx, "CLOSING_DOORS")
-    SetMetroDoors(train, false, station.name)
 
-    local closeWaitSec = Config.Train.DoorCloseWaitSeconds or 3
-    for _ = 1, closeWaitSec do
+    -- Beri kecepatan mikro (0.05) agar CTrain native GTA V berhenti memaksa pintu terbuka di stasiun!
+    SetTrainCruiseSpeed(train, 0.05)
+    ApplyDoorsStateOnce(train, false, station.name)
+
+    local closeWaitMs = (Config.Train.DoorCloseWaitSeconds or 3) * 1000
+    local startCloseTimer = GetGameTimer()
+
+    -- Selama fase penutupan, geser rasio pintu dari 1.0 ke 0.0 secara bertahap dan kunci rapat
+    local carriage = GetTrainCarriage(train, 1)
+    while (GetGameTimer() - startCloseTimer) < closeWaitMs do
         if not DoesEntityExist(train) then return end
+        local progress = math.min(1.0, (GetGameTimer() - startCloseTimer) / 1400.0)
+        local targetRatio = math.max(0.0, 1.0 - progress)
+
         SetTrainSpeed(train, 0.0)
-        SetTrainCruiseSpeed(train, 0.0)
-        SetMetroDoors(train, false, station.name)
-        Wait(1000)
+        local entities = { train }
+        if DoesEntityExist(carriage) and carriage ~= 0 then
+            table.insert(entities, carriage)
+        end
+
+        for _, veh in ipairs(entities) do
+            SetVehicleDoorsLocked(veh, 2)
+            for d = 0, 5 do
+                if targetRatio > 0.02 then
+                    SetVehicleDoorControl(veh, d, 3, targetRatio)
+                else
+                    SetVehicleDoorControl(veh, d, 5, 0.0)
+                    SetVehicleDoorShut(veh, d, true)
+                end
+            end
+            if targetRatio <= 0.02 then
+                SetVehicleDoorsShut(veh, true)
+            end
+        end
+        Wait(0)
     end
 
     if not DoesEntityExist(train) then return end
 
+    -- Pastikan pintu terkunci 100% rapat sebelum jalan
+    ForceKeepMetroDoorsClosed(train)
     TriggerServerEvent('eco_subway:server:updateTrainStatus', netTrain, stationIdx, "EN_ROUTE")
 
-    Wait(500)
+    Wait(300)
     if not DoesEntityExist(train) then return end
 
+    -- 4. Akselerasi keluar peron dengan pintu tertutup rapat
     SetTrainCruiseSpeed(train, Config.Train.ApproachSpeed or 8.0)
     Wait(3500)
     if DoesEntityExist(train) then
@@ -534,6 +677,8 @@ function StartMetroLoop(train, startStationIdx)
         if Config.Stations[startStationIdx] then
             PerformStationStop(train, startStationIdx)
         else
+            ApplyDoorsStateOnce(train, false, "")
+            ForceKeepMetroDoorsClosed(train)
             SetTrainCruiseSpeed(train, Config.Train.CruiseSpeed or 20.0)
         end
 
@@ -614,69 +759,91 @@ local function CalculateLoopDistance(fromStationIdx, toStationIdx, currentTrainP
     return dist, stopsBetween
 end
 
--- Fungsi Kalkulasi Teks Layar PIDS Real-Time untuk Stasiun `stIdx`
-local function GetStationPIDSDisplayInfo(stIdx)
+local function ShortStationName(name)
+    return (name:gsub(" Station$", ""))
+end
+
+local function FormatBoardTime(eta, state)
+    if state == "PLATFORM" then return "Boarding" end
+    if state == "CLOSING" then return "Departing" end
+    if eta < 20 then return "Due" end
+    return ("%d min"):format(math.ceil(eta / 60))
+end
+
+local function GetStationPIDSBoard(stIdx)
     local st = Config.Stations[stIdx]
     local nextStIdx = (stIdx % #Config.Stations) + 1
-    local nextStName = Config.Stations[nextStIdx] and Config.Stations[nextStIdx].name or "-"
+    local nextName = ShortStationName(Config.Stations[nextStIdx].name)
     local dwellTime = (Config.Train and Config.Train.WaitAtStationSeconds) or 15
     local avgSpeed = ((Config.Train and Config.Train.CruiseSpeed) or 20.0) * 0.82
 
-    local headerTitle = ("[LST METRO] STASIUN %s"):format(string.upper(st.name))
+    local board = {
+        station = string.upper(ShortStationName(st.name)),
+        rows = {},
+        messages = { "Mind the gap", ("Fare $%s  |  /subwayschedule"):format(Config.FarePrice) },
+        urgent = false,
+        color = { r = 245, g = 158, b = 11 },
+    }
 
     if #livePIDSTrains == 0 then
-        local etaWait = FormatSecondsToMMSS(liveNextDispatchIn + 30)
-        return headerTitle,
-            ("~y~KERETA BERIKUTNYA: MENUNGGU DEPO (%s)~s~"):format(etaWait),
-            ("Tujuan Berikutnya: %s | Tarif: $%s"):format(nextStName, Config.FarePrice),
-            { r = 245, g = 158, b = 11 }
+        board.rows[1] = {
+            dest = "Awaiting train from depot",
+            time = ("%d min"):format(math.ceil((liveNextDispatchIn + 30) / 60))
+        }
+        return board
     end
 
-    local bestEta = 999999
-    local bestEtd = 999999
-    local bestTrainCode = "LST-01"
-    local trainStatusAtPlatform = nil
-
+    local entries = {}
     for _, tr in ipairs(livePIDSTrains) do
-        if (tr.status == "STOPPED" or tr.status == "CLOSING_DOORS") and tr.lastStationIdx == stIdx then
-            trainStatusAtPlatform = tr.status
-            bestEta = 0
-            bestEtd = math.max(1, dwellTime - tr.elapsedInStatus)
-            bestTrainCode = tr.code
-            break
+        local atStop = (tr.status == "STOPPED" or tr.status == "CLOSING_DOORS")
+        if atStop and tr.lastStationIdx == stIdx then
+            entries[#entries + 1] = {
+                code = tr.code, eta = 0,
+                state = (tr.status == "CLOSING_DOORS") and "CLOSING" or "PLATFORM"
+            }
         else
-            local remainingStopWait = (tr.status == "STOPPED" or tr.status == "CLOSING_DOORS")
-                and math.max(0, dwellTime - tr.elapsedInStatus) or 0
-            local trackDist, intermediateStops = CalculateLoopDistance(tr.lastStationIdx, stIdx, tr.coords)
-            local travelSec = (trackDist / avgSpeed) + (intermediateStops * (dwellTime + 6)) + remainingStopWait
-
-            if travelSec < bestEta then
-                bestEta = travelSec
-                bestEtd = travelSec + dwellTime
-                bestTrainCode = tr.code
-            end
+            local remainingStopWait = atStop and math.max(0, dwellTime - tr.elapsedInStatus) or 0
+            local trackDist, stops = CalculateLoopDistance(tr.lastStationIdx, stIdx, tr.coords)
+            local travelSec = (trackDist / avgSpeed) + (stops * (dwellTime + 6)) + remainingStopWait
+            entries[#entries + 1] = { code = tr.code, eta = travelSec, state = "ENROUTE" }
         end
     end
 
-    if trainStatusAtPlatform == "CLOSING_DOORS" then
-        return headerTitle,
-            ("~o~[%s] PINTU DITUTUP - KERETA SEGERA BERANGKAT!~s~"):format(bestTrainCode),
-            ("Tujuan Berikutnya: ~y~%s~s~ | Harap Menjauh dari Pintu"):format(nextStName),
-            { r = 249, g = 115, b = 22 }
-    elseif trainStatusAtPlatform == "STOPPED" then
-        return headerTitle,
-            ("~g~[%s] SEDANG DI PERON | BERANGKAT: %s~s~"):format(bestTrainCode, FormatSecondsToMMSS(bestEtd)),
-            ("Tujuan Berikutnya: ~y~%s~s~ | Silakan Naik ke Kabin"):format(nextStName),
-            { r = 34, g = 197, b = 94 }
-    else
-        return headerTitle,
-            ("KERETA BERIKUTNYA: ~y~%s~s~ (~g~%s~s~)"):format(bestTrainCode, FormatSecondsToMMSS(bestEta)),
-            ("Tujuan Berikutnya: ~b~%s~s~ | Info Lengkap: ~y~/subwayschedule~s~"):format(nextStName),
-            { r = 56, g = 189, b = 248 }
+    table.sort(entries, function(a, b) return a.eta < b.eta end)
+
+    for i = 1, math.min(2, #entries) do
+        local e = entries[i]
+        board.rows[i] = {
+            dest = ("%s  %s"):format(e.code, nextName),
+            time = FormatBoardTime(e.eta, e.state)
+        }
     end
+
+    local first = entries[1]
+    if first.state == "CLOSING" then
+        board.urgent = true
+        board.messages = { "Doors closing - stand clear" }
+        board.color = { r = 249, g = 115, b = 22 }
+    elseif first.state == "PLATFORM" then
+        board.urgent = true
+        board.messages = { "Please board - mind the gap" }
+        board.color = { r = 34, g = 197, b = 94 }
+    end
+
+    return board
 end
 
--- Event penerima data sinkronisasi PIDS otomatis setiap 2 detik dari server
+local boardCache = {}
+local function GetCachedPIDSBoard(idx)
+    local now = GetGameTimer()
+    local c = boardCache[idx]
+    if not c or (now - c.t) > 500 then
+        c = { t = now, b = GetStationPIDSBoard(idx) }
+        boardCache[idx] = c
+    end
+    return c.b
+end
+
 RegisterNetEvent('eco_subway:client:syncPIDSData', function(trainsData, nextDispatchIn)
     livePIDSTrains = trainsData or {}
     liveNextDispatchIn = nextDispatchIn or 0
@@ -838,14 +1005,12 @@ exports('GetMetroStations', function()
     return Config.Stations
 end)
 
--- Thread Utama Render PIDS Layar LED Peron & Interaksi Penumpang
 CreateThread(function()
     while true do
         local sleep = 400
         local playerPed = PlayerPedId()
         local pCoords = GetEntityCoords(playerPed)
 
-        -- Render PIDS (Passenger Information Display System) di Peron Stasiun Terdekat
         if Config.DrawPlatformMarker then
             local maxDrawDist = Config.PIDSDrawDistance or 28.0
             local heightOffset = Config.PIDSHeightOffset or 2.15
@@ -855,8 +1020,7 @@ CreateThread(function()
                 local dist = #(pCoords - st.coords)
                 if dist < maxDrawDist then
                     sleep = 0
-                    local header, line1, line2, borderColor = GetStationPIDSDisplayInfo(idx)
-                    DrawPIDSScreen3D(boardPos.x, boardPos.y, boardPos.z, header, line1, line2, borderColor)
+                    DrawPIDSBoard(boardPos.x, boardPos.y, boardPos.z, GetCachedPIDSBoard(idx))
                 end
             end
         end
@@ -909,7 +1073,7 @@ CreateThread(function()
                     ESX.ShowNotification("~b~[LST Metro]~s~ Anda telah keluar dari kereta. Terima kasih telah menggunakan LST Metro.")
                 end
 
-                local isBoarding = Entity(closestCarriage).state.isMetroBoarding or (GetEntitySpeed(closestCarriage) < 0.2)
+                local isBoarding = Entity(closestCarriage).state.isMetroBoarding
                 if isBoarding and cDist < 5.5 then
                     ESX.ShowHelpNotification("Tekan ~INPUT_ENTER~ (F) untuk Tap Tiket & Duduk (~g~$" .. Config.FarePrice .. "~s~) atau jalan masuk ke kabin")
                     if IsControlJustReleased(0, 23) and not paymentPending then

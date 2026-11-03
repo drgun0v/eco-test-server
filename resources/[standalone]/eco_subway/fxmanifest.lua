@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Dragunov'
 description 'Custom Networked Autonomous Underground Metro System (LST) with Live PIDS'
-version '1.8.0'
+version '1.9.0'
 
 shared_scripts {
     '@es_extended/imports.lua',

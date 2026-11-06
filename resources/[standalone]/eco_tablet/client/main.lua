@@ -8,7 +8,59 @@ local nextBusDispatchByRoute = { [1] = 0, [2] = 0 }
 local nextTrainDispatchIn = 0
 
 local cachedSavedPlaces = {}
+local cachedEcoVip = { active = false, remainingTrips = 0, daysLeft = 0, expired = false }
+local cachedTrips = {}
 local activeEcoCab = nil -- { status, serviceType, destName, coords, driverName, isAutonomous, estimatedFare, etaMin, distKm, gasStop }
+
+local isSurgeActive = false
+local currentSurgeReason = "Normal"
+
+-- =========================================================================
+-- EVALUASI SURGE PRICING & ECOVIP (DIDEFINISIKAN DI AWAL SEBELUM DIPANGGIL)
+-- =========================================================================
+local function EvaluateSurgePricing()
+    if not Config.SurgePricing or not Config.SurgePricing.Enabled then
+        return false, "Normal", 1.0
+    end
+
+    local hour = GetClockHours()
+    local isNight = (hour >= Config.SurgePricing.NightHours.Start or hour < Config.SurgePricing.NightHours.Finish)
+    local currentWeatherHash = GetPrevWeatherTypeHashName()
+    local weatherReason = Config.SurgePricing.BadWeatherTypes[currentWeatherHash]
+
+    local surgeMult = (cachedEcoVip and cachedEcoVip.active) and (Config.EcoVIP.SurgeMultiplier or 1.05) or Config.SurgePricing.Multiplier
+
+    if weatherReason and isNight then
+        return true, ("Cuaca Buruk (%s) & Jam Malam"):format(weatherReason), surgeMult
+    elseif weatherReason then
+        return true, ("Cuaca Buruk (%s)"):format(weatherReason), surgeMult
+    elseif isNight then
+        return true, "Tarif Jam Malam (22:00 - 05:00)", surgeMult
+    end
+
+    return false, "Normal", 1.0
+end
+
+-- Thread Check Surge Otomatis setiap 5 detik
+CreateThread(function()
+    while true do
+        Wait(5000)
+        local active, reason, multiplier = EvaluateSurgePricing()
+        if active ~= isSurgeActive or reason ~= currentSurgeReason then
+            isSurgeActive = active
+            currentSurgeReason = reason
+
+            if isTabletOpen then
+                SendNUIMessage({
+                    action = 'updateSurgePricing',
+                    active = isSurgeActive,
+                    multiplier = multiplier,
+                    reason = currentSurgeReason
+                })
+            end
+        end
+    end
+end)
 
 -- Listener telemetri kereta dari eco_subway
 RegisterNetEvent('eco_subway:client:syncPIDSData', function(trainsData, nextDispatchIn)
@@ -54,7 +106,7 @@ RegisterNetEvent('eco_tablet:client:syncTelemetry', function(snapshot)
     end
 end)
 
--- Penerima data Alamat Tersimpan dari Database
+-- Listener penerima daftar tempat tersimpan
 RegisterNetEvent('eco_tablet:client:receiveSavedPlaces', function(places)
     cachedSavedPlaces = places or {}
     if isTabletOpen then
@@ -65,9 +117,25 @@ RegisterNetEvent('eco_tablet:client:receiveSavedPlaces', function(places)
     end
 end)
 
+-- Penerima Data EcoVIP & Riwayat dari Server
+RegisterNetEvent('eco_tablet:client:receiveEcoCabUserData', function(vipData, trips)
+    cachedEcoVip = vipData or cachedEcoVip
+    cachedTrips = trips or {}
+
+    if isTabletOpen then
+        SendNUIMessage({
+            action = 'updateEcoCabUserData',
+            vip = cachedEcoVip,
+            trips = cachedTrips
+        })
+    end
+end)
+
 -- =========================================================================
--- LISTENER EVENT DARI eco_taxi UNTUK UPDATE STATE UI ECOCAB PADA TABLET
+-- LISTENER & LOGIKA ECOCAB (RIDE-HAILING)
 -- =========================================================================
+
+-- Listener status pemesanan taksi
 RegisterNetEvent('eco_taxi:client:dispatchSmartTaxi', function(pickupCoords, destCoords, destName, estimatedFare, serviceType, driverName)
     local sType = serviceType or 'ecocab'
     local sCfg = Config.EcoCabServices[sType] or Config.EcoCabServices['ecocab']
@@ -100,7 +168,7 @@ RegisterNetEvent('eco_taxi:client:dispatchSmartTaxi', function(pickupCoords, des
     end
 end)
 
--- Notifikasi Event Random Mampir Pom Bensin (EcoRide)
+-- Event random driver mampir isi bensin
 RegisterNetEvent('eco_taxi:client:driverFuelStop', function(gasStationName)
     if activeEcoCab then
         activeEcoCab.gasStop = true
@@ -114,6 +182,7 @@ RegisterNetEvent('eco_taxi:client:driverFuelStop', function(gasStationName)
     end
 end)
 
+-- Pembatalan pesanan taksi
 RegisterNetEvent('eco_taxi:client:cancelCurrentRide', function()
     activeEcoCab = nil
     if isTabletOpen then
@@ -124,8 +193,7 @@ RegisterNetEvent('eco_taxi:client:cancelCurrentRide', function()
     end
 end)
 
--- Selesai Trip: Tampilkan Rating Modal 1-5 Bintang di Tablet!
--- Parameter dari server: finalFare (number), driverName (string), serviceType (string)
+-- Taksi tiba & selesai
 RegisterNetEvent('eco_taxi:client:rideCompletedDismissTaxi', function(finalFare, driverName, serviceType)
     local sType = serviceType or (activeEcoCab and activeEcoCab.serviceType) or 'ecocab'
     local sCfg  = Config.EcoCabServices[sType] or Config.EcoCabServices['ecocab']
@@ -138,9 +206,14 @@ RegisterNetEvent('eco_taxi:client:rideCompletedDismissTaxi', function(finalFare,
         destName     = (activeEcoCab and activeEcoCab.destName) or 'Tujuan Anda',
         finalFare    = tonumber(finalFare) or (activeEcoCab and activeEcoCab.estimatedFare) or 30
     }
+
     activeEcoCab = nil
 
-    -- Buka tablet dan tampilkan modal rating pasca-trip
+    SendNUIMessage({
+        action = 'ecoCabUpdate',
+        activeRide = nil
+    })
+
     OpenEcoTablet()
     SendNUIMessage({
         action = 'showRatingModal',
@@ -148,7 +221,7 @@ RegisterNetEvent('eco_taxi:client:rideCompletedDismissTaxi', function(finalFare,
     })
 end)
 
--- Fungsi Animasi iPad
+-- Animasi iPad
 local function StartTabletAnimation()
     local ped = PlayerPedId()
     if IsPedInAnyVehicle(ped, false) then
@@ -263,6 +336,8 @@ function SendLiveUpdateToNUI()
         end
     end
 
+    local surgeActive, surgeReason, surgeMult = EvaluateSurgePricing()
+
     SendNUIMessage({
         action = 'updateTelemetry',
         playerCoords = { x = pCoords.x, y = pCoords.y, z = pCoords.z },
@@ -279,7 +354,12 @@ function SendLiveUpdateToNUI()
         ecoCabDestinations = taxiDestinations,
         savedPlaces = cachedSavedPlaces,
         activeEcoCab = activeEcoCab,
-        services = Config.EcoCabServices
+        services = Config.EcoCabServices,
+        surge = {
+            active = surgeActive,
+            multiplier = surgeMult,
+            reason = surgeReason
+        }
     })
 end
 
@@ -291,8 +371,9 @@ function OpenEcoTablet()
     SetNuiFocus(true, true)
 
     TriggerServerEvent('eco_tablet:server:requestSnapshot')
-    TriggerServerEvent('eco_subway:server:requestSchedule')
+    -- Baris requestSchedule ke eco_subway dihapus agar tidak memicu popup menu bawaan
     TriggerServerEvent('eco_tablet:server:getSavedPlaces')
+    TriggerServerEvent('eco_tablet:server:getEcoCabUserData')
 
     SendNUIMessage({
         action = 'openTablet'
@@ -355,9 +436,8 @@ RegisterNUICallback('setWaypoint', function(data, cb)
     end
 end)
 
--- Ambil Koordinat Waypoint Peta GTA V
 RegisterNUICallback('getMapWaypoint', function(_, cb)
-    local wpBlip = GetFirstBlipInfoId(8) -- 8 = Waypoint Sprite
+    local wpBlip = GetFirstBlipInfoId(8)
     if DoesBlipExist(wpBlip) then
         local wpCoords = GetBlipInfoIdCoord(wpBlip)
         cb({ ok = true, x = wpCoords.x, y = wpCoords.y, z = wpCoords.z })
@@ -366,7 +446,6 @@ RegisterNUICallback('getMapWaypoint', function(_, cb)
     end
 end)
 
--- Simpan Alamat Baru ke SQL
 RegisterNUICallback('saveCustomPlace', function(data, cb)
     if data and data.label and data.coords then
         TriggerServerEvent('eco_tablet:server:savePlace', data)
@@ -376,7 +455,6 @@ RegisterNUICallback('saveCustomPlace', function(data, cb)
     end
 end)
 
--- Hapus Alamat Tersimpan dari SQL
 RegisterNUICallback('deleteCustomPlace', function(data, cb)
     if data and data.id then
         TriggerServerEvent('eco_tablet:server:deletePlace', data.id)
@@ -386,7 +464,6 @@ RegisterNUICallback('deleteCustomPlace', function(data, cb)
     end
 end)
 
--- Submit Rating & Tip Pasca-Trip
 RegisterNUICallback('submitRating', function(data, cb)
     if data then
         TriggerServerEvent('eco_tablet:server:submitRating', data)
@@ -396,7 +473,6 @@ RegisterNUICallback('submitRating', function(data, cb)
     end
 end)
 
--- Order Taxi Ride (EcoLuxe / EcoCab / EcoRide)
 RegisterNUICallback('requestEcoCabRide', function(data, cb)
     if data and data.x and data.y and data.z and data.name then
         local destVec = vector3(tonumber(data.x) + 0.0, tonumber(data.y) + 0.0, tonumber(data.z) + 0.0)
@@ -409,8 +485,17 @@ RegisterNUICallback('requestEcoCabRide', function(data, cb)
             driverName = Config.IndonesianDriverNames[math.random(1, #Config.IndonesianDriverNames)]
         end
 
+        local active, _, multiplier = EvaluateSurgePricing()
+        local isVipActive = (cachedEcoVip and cachedEcoVip.active and cachedEcoVip.remainingTrips > 0)
+        local surgeMultiplier = active and (isVipActive and (Config.EcoVIP.SurgeMultiplier or 1.05) or multiplier) or 1.0
+
+        local vipPayload = {
+            isVip = isVipActive,
+            discountPercent = isVipActive and (Config.EcoVIP.DiscountPercent or 20) or 0
+        }
+
         local ok, err = pcall(function()
-            exports['eco_taxi']:RequestEcoCabRide(destVec, destName, serviceType, driverName)
+            exports['eco_taxi']:RequestEcoCabRide(destVec, destName, serviceType, driverName, surgeMultiplier, vipPayload)
         end)
 
         if ok then
@@ -437,87 +522,18 @@ RegisterNUICallback('cancelEcoCabRide', function(_, cb)
     end
 end)
 
-AddEventHandler('onResourceStop', function(resourceName)
-    if resourceName == GetCurrentResourceName() and isTabletOpen then
-        CloseEcoTablet()
-    end
-end)
-
--- =========================================================================
--- LOGIKA CLIENT UNTUK ECOVIP, SURGE PRICING & TRIP HISTORY
--- =========================================================================
-local cachedEcoVip = { active = false, remainingTrips = 0, daysLeft = 0 }
-local cachedTrips = {}
-local isSurgeActive = false
-local currentSurgeReason = "Normal"
-
--- Evaluasi Kondisi Surge Pricing
-local function EvaluateSurgePricing()
-    if not Config.SurgePricing or not Config.SurgePricing.Enabled then
-        return false, "Normal", 1.0
-    end
-
-    local hour = GetClockHours()
-    local isNight = (hour >= Config.SurgePricing.NightHours.Start or hour < Config.SurgePricing.NightHours.Finish)
-    local currentWeatherHash = GetPrevWeatherTypeHashName()
-    local weatherReason = Config.SurgePricing.BadWeatherTypes[currentWeatherHash]
-
-    local surgeMult = (cachedEcoVip and cachedEcoVip.active) and (Config.EcoVIP.SurgeMultiplier or 1.05) or Config.SurgePricing.Multiplier
-
-    if weatherReason and isNight then
-        return true, ("Cuaca Buruk (%s) & Jam Malam"):format(weatherReason), surgeMult
-    elseif weatherReason then
-        return true, ("Cuaca Buruk (%s)"):format(weatherReason), surgeMult
-    elseif isNight then
-        return true, "Tarif Jam Malam (22:00 - 05:00)", surgeMult
-    end
-
-    return false, "Normal", 1.0
-end
-
--- Thread Check Surge Otomatis setiap 5 detik
-CreateThread(function()
-    while true do
-        Wait(5000)
-        local active, reason, multiplier = EvaluateSurgePricing()
-        if active ~= isSurgeActive or reason ~= currentSurgeReason then
-            isSurgeActive = active
-            currentSurgeReason = reason
-
-            if isTabletOpen then
-                SendNUIMessage({
-                    action = 'updateSurgePricing',
-                    active = isSurgeActive,
-                    multiplier = multiplier,
-                    reason = currentSurgeReason
-                })
-            end
-        end
-    end
-end)
-
--- Penerima Data EcoVIP & Riwayat dari Server
-RegisterNetEvent('eco_tablet:client:receiveEcoCabUserData', function(vipData, trips)
-    cachedEcoVip = vipData or cachedEcoVip
-    cachedTrips = trips or {}
-
-    if isTabletOpen then
-        SendNUIMessage({
-            action = 'updateEcoCabUserData',
-            vip = cachedEcoVip,
-            trips = cachedTrips
-        })
-    end
-end)
-
--- Callback Beli / Perpanjang Paket EcoVIP
 RegisterNUICallback('buyEcoVIP', function(_, cb)
     TriggerServerEvent('eco_tablet:server:buyOrRenewEcoVIP')
     cb({ ok = true })
 end)
 
--- Callback Refresh Data EcoCab
 RegisterNUICallback('getEcoCabUserData', function(_, cb)
     TriggerServerEvent('eco_tablet:server:getEcoCabUserData')
     cb({ ok = true })
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() and isTabletOpen then
+        CloseEcoTablet()
+    end
 end)

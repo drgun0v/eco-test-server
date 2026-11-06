@@ -1,0 +1,12 @@
+{
+  "version": "1.2.1",
+  "changes": [
+      "Made the milking progress animation configurable via Config.Activities.milking_cows.animation",
+      "Made the vehicle trunk milk bucket prop configurable via Config.VehAttachMilk.model"
+  ],
+  "filesAffected": [
+      "shared/config.lua",
+      "client/activities/animalActivities.lua",
+      "server/activities/animalActivities.lua"
+  ]
+}

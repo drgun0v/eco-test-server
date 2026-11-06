@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Four Summit Passport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-transparent select-none overflow-hidden">
+    <div id="passport-container" class="hidden fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="w-[680px] bg-[#f4efe6] border-8 border-[#2c3e2e] rounded-xl shadow-2xl overflow-hidden text-[#2b2b2b]">
+            <!-- Header Paspor -->
+            <div class="bg-[#2c3e2e] text-[#e9e2d0] px-6 py-4 flex justify-between items-center border-b-4 border-[#c5a059]">
+                <div>
+                    <p class="text-xs tracking-widest uppercase text-[#c5a059] font-semibold">State of San Andreas National Park Service</p>
+                    <h1 class="text-2xl font-bold tracking-tight">FOUR SUMMIT EXPEDITION PASSPORT</h1>
+                </div>
+                <div class="text-right">
+                    <span id="passport-serial" class="bg-[#1e2b20] text-[#c5a059] px-3 py-1 rounded text-xs font-mono border border-[#c5a059]/40">FS-0000</span>
+                </div>
+            </div>
+
+            <!-- Info Pemegang -->
+            <div class="px-6 py-3 bg-[#e8e0d2] border-b border-[#d3c8b4] flex justify-between items-center text-sm">
+                <div>
+                    <span class="text-gray-600">Nama Pendaki:</span>
+                    <strong id="owner-name" class="ml-1 text-gray-900 uppercase">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-600">Progres Puncak:</span>
+                    <strong id="summit-progress" class="ml-1 text-[#2c3e2e]">0 / 4 Puncak</strong>
+                </div>
+            </div>
+
+            <!-- Grid 4 Stempel Puncak -->
+            <div class="p-6 grid grid-cols-2 gap-4">
+                <!-- Josiah -->
+                <div id="card-josiah" class="stamp-card p-4 rounded-lg border-2 border-dashed border-gray-400 bg-white/60 flex flex-col justify-between h-36 relative">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-gray-500">Etape I • 402m</span>
+                        <h3 class="text-lg font-extrabold text-gray-800">MT. JOSIAH</h3>
+                        <p class="text-xs text-gray-500">Badge: Josiah Mountaineer</p>
+                    </div>
+                    <div id="stamp-josiah" class="text-xs font-mono text-gray-400">BELUM DISTEMPEL</div>
+                </div>
+
+                <!-- Chiliad -->
+                <div id="card-chiliad" class="stamp-card p-4 rounded-lg border-2 border-dashed border-gray-400 bg-white/60 flex flex-col justify-between h-36 relative">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-gray-500">Etape II • 798m</span>
+                        <h3 class="text-lg font-extrabold text-gray-800">MT. CHILIAD</h3>
+                        <p class="text-xs text-gray-500">Badge: Chilliad Explorer</p>
+                    </div>
+                    <div id="stamp-chiliad" class="text-xs font-mono text-gray-400">BELUM DISTEMPEL</div>
+                </div>
+
+                <!-- Gordo -->
+                <div id="card-gordo" class="stamp-card p-4 rounded-lg border-2 border-dashed border-gray-400 bg-white/60 flex flex-col justify-between h-36 relative">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-gray-500">Etape III • 585m</span>
+                        <h3 class="text-lg font-extrabold text-gray-800">MT. GORDO</h3>
+                        <p class="text-xs text-gray-500">Badge: Gordo Pioneer</p>
+                    </div>
+                    <div id="stamp-gordo" class="text-xs font-mono text-gray-400">BELUM DISTEMPEL</div>
+                </div>
+
+                <!-- Chianski -->
+                <div id="card-chianski" class="stamp-card p-4 rounded-lg border-2 border-dashed border-gray-400 bg-white/60 flex flex-col justify-between h-36 relative">
+                    <div>
+                        <span class="text-xs font-bold uppercase text-gray-500">Etape IV • 345m</span>
+                        <h3 class="text-lg font-extrabold text-gray-800">MT. CHIANSKI</h3>
+                        <p class="text-xs text-gray-500">Badge: Chianski Trekker</p>
+                    </div>
+                    <div id="stamp-chianski" class="text-xs font-mono text-gray-400">BELUM DISTEMPEL</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-3 bg-[#e8e0d2] border-t border-[#d3c8b4] flex justify-between items-center">
+                <p class="text-xs text-gray-600 italic">Seluruh etape wajib ditempuh dengan berjalan kaki dari Trailhead.</p>
+                <button id="btn-close" class="bg-[#2c3e2e] hover:bg-[#1e2b20] text-white text-xs font-bold px-4 py-2 rounded transition">
+                    TUTUP PASPOR (ESC)
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

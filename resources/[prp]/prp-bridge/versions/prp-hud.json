@@ -1,0 +1,12 @@
+{
+  "version": "1.0.4",
+  "changes": [
+    "Fixed the car ENG light so it follows engine running state instead of engine health.",
+    "Seatbelt indicator now syncs with seatbelt resources (LocalPlayer.state.seatbelt / harness); defaults to off."
+  ],
+  "filesAffected": [
+    "fxmanifest.lua",
+    "client/belt.lua",
+    "ui/"
+  ]
+}

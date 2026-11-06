@@ -1,0 +1,12 @@
+{
+  "version": "1.1.1",
+  "changes": [
+    "Fix getFreeSlotsCount using resolveStashTemplate so PROPERTY_FURNITURE_* reports 100 slots",
+    "AddFurnitureToProperty falls back to mailbox when furniture storage is full"
+  ],
+  "filesAffected": [
+    "fxmanifest.lua",
+    "shared/bridge_adapter.lua",
+    "server/functions.lua"
+  ]
+}

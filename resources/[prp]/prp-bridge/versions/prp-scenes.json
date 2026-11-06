@@ -1,0 +1,10 @@
+{
+  "version": "1.0.5",
+  "changes": [
+    "Routed scenes now re-check bucket access while nearby so texts no longer stay visible after switching dimensions without leaving render distance."
+  ],
+  "filesAffected": [
+    "fxmanifest.lua",
+    "client/scene.lua"
+  ]
+}

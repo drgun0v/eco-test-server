@@ -1,0 +1,11 @@
+{
+  "version": "1.0.7",
+  "changes": [
+    "Fix dead crops still being waterable, growing, and harvestable after reaching the death state"
+  ],
+  "filesAffected": [
+    "fxmanifest.lua",
+    "server/pots.lua",
+    "client/pots.lua"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": "1.0.4",
+  "changes": [
+      "Fixed death teleport to entrance still firing after leaving a horde instance"
+  ],
+  "filesAffected": [
+      "fxmanifest.lua",
+      "client/cl_main.lua",
+      "server/classes/game.lua"
+  ]
+}

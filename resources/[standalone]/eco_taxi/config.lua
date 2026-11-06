@@ -1,59 +1,85 @@
 Config = {}
 
 -- =========================================================================
--- 3 KELAS LAYANAN ECOCAB (UBER-STYLE)
+-- KONFIGURASI 3 KELAS LAYANAN ECOCAB (SINKRON DENGAN ECO_TABLET)
 -- =========================================================================
 Config.Services = {
     ['ecoluxe'] = {
-        name = 'EcoLuxe',
-        model = `vivanite2`,
-        isAutonomous = true,
-        driverModel = `s_m_m_autoshop_01`, -- Ghost AI ped invisible
+        id            = 'ecoluxe',
+        name          = 'EcoLuxe',
+        subtitle      = 'Autonomous Electric Sedan',
+        model         = `vivanite2`,
+        isAutonomous  = true,
+        driverModel   = `s_m_m_autoshop_01`, -- Ghost AI ped invisible
         maxPassengers = 3,
-        speedKmh = 120.0,
-        cruiseSpeed = 33.3, -- ~120 km/h (m/s)
-        baseFare = 30,
-        pricePerKm = 18,
-        minFare = 50,
-        isBike = false,
-        drivingStyle = 524475
+        maxSpeedKmh   = 120.0,
+        cruiseSpeed   = 33.33, -- 120 km/h dalam m/s
+        pickupSpeed   = 25.0,  -- ~90 km/h saat menjemput
+        baseFare      = 30,    -- Biaya buka pintu $30
+        pricePerKm    = 18,    -- Tarif $18/km
+        minFare       = 50,    -- Tarif minimum $50
+        plate         = 'LST-AI', -- Plat nomor khusus otonom sesuai UI eco_tablet
+        isBike        = false,
+        drivingStyle  = 524475
     },
     ['ecocab'] = {
-        name = 'EcoCab',
-        model = `taxi`,
-        isAutonomous = false,
-        driverModel = `s_m_m_trucker_01`,
+        id            = 'ecocab',
+        name          = 'EcoCab',
+        subtitle      = 'City Standard Taxi',
+        model         = `taxi`,
+        isAutonomous  = false,
+        driverModel   = `s_m_m_trucker_01`,
         maxPassengers = 3,
-        speedKmh = 80.0,
-        cruiseSpeed = 22.2, -- ~80 km/h (m/s)
-        baseFare = 25,
-        pricePerKm = 14,
-        minFare = 30,
-        isBike = false,
-        drivingStyle = 524475
+        maxSpeedKmh   = 80.0,
+        cruiseSpeed   = 22.22, -- 80 km/h dalam m/s
+        pickupSpeed   = 20.0,  -- ~72 km/h saat menjemput
+        baseFare      = 25,    -- Biaya buka pintu $25
+        pricePerKm    = 14,    -- Tarif $14/km
+        minFare       = 30,    -- Tarif minimum $30
+        plate         = 'B1945ECO', -- Sesuai dengan tampilan 'B 1945 ECO' di eco_tablet
+        isBike        = false,
+        drivingStyle  = 524475
     },
     ['ecoride'] = {
-        name = 'EcoRide',
-        model = `faggio`,
-        isAutonomous = false,
-        driverModelPool = { `s_m_y_ammucity_01`, `ig_josef`, `ig_mp_agent14` },
-        maxPassengers = 1,
-        speedKmh = 60.0,
-        cruiseSpeed = 16.6, -- ~60 km/h (m/s)
-        baseFare = 0,
-        pricePerKm = 8,
-        minFare = 15,
-        isBike = true,
-        drivingStyle = 524475,
-        -- Event Random: Mampir Pom Bensin (18% chance)
-        gasEventChance = 18,
-        gasStopDuration = 8000 -- 8 detik di dispenser SPBU
+        id              = 'ecoride',
+        name            = 'EcoRide',
+        subtitle        = 'Ojek Motor Hemat',
+        model           = `faggio`,
+        isAutonomous    = false,
+        driverModelPool = { `s_m_y_ammucity_01`, `ig_josef`, `ig_mp_agent14` }, -- Random ped sesuai spesifikasi
+        maxPassengers   = 1,
+        maxSpeedKmh     = 60.0,
+        cruiseSpeed     = 16.67, -- 60 km/h dalam m/s
+        pickupSpeed     = 16.67, -- 60 km/h saat menjemput
+        baseFare        = 0,     -- Tidak ada biaya buka pintu ($0)
+        pricePerKm      = 8,     -- Tarif $8/km
+        minFare         = 15,    -- Tarif minimum $15
+        plate           = 'B1945ECO', -- Sesuai dengan tampilan 'B 1945 ECO' di eco_tablet
+        isBike          = true,
+        drivingStyle    = 524475,
+        gasEventChance  = 25,    -- 25% peluang mampir isi bensin di SPBU terdekat
+        gasStopDuration = 8000   -- Durasi isi bensin (8 detik)
     }
 }
 
--- Pengaturan Navigasi Kendali Otonom & AI Driver
+-- Alias agar kompatibel jika dipanggil sebagai Config.EcoCabServices
+Config.EcoCabServices = Config.Services
+
+-- Fallback Pricing Default
+Config.Pricing = {
+    BaseFare = 25,
+    PricePerKm = 14,
+    MinimumFare = 30,
+    WaitTimePricePerMin = 5
+}
+
+-- Pengaturan Navigasi Kendali Otonom & AI
 Config.Drive = {
+    CruiseSpeed = 22.22,
+    PickupSpeed = 20.0,
     ApproachSpeed = 6.0,
+    MaxSpeedKmh = 120.0,
+    DrivingStyle = 524475,
     SpawnDistanceMin = 70.0,
     SpawnDistanceMax = 120.0,
     PickupRadius = 6.0,
@@ -61,19 +87,37 @@ Config.Drive = {
     WaitAtPickupSeconds = 60
 }
 
--- Lokasi SPBU di Los Santos untuk Random Event EcoRide
+-- Daftar Pom Bensin (SPBU) di Los Santos untuk Random Event EcoRide
 Config.GasStations = {
     { name = "SPBU Strawberry / Innocence Blvd", coords = vector3(265.05, -1262.65, 29.3) },
-    { name = "SPBU Grove St / Davis",           coords = vector3(-70.94, -1761.88, 29.53) },
-    { name = "SPBU Clinton Ave / Vinewood",     coords = vector3(620.83, 268.53, 103.09) },
-    { name = "SPBU Mirror Park",                coords = vector3(1181.38, -330.85, 69.32) },
-    { name = "SPBU El Rancho Blvd / Murrieta",  coords = vector3(1208.61, -1402.57, 35.22) },
+    { name = "SPBU Grove St / Davis",            coords = vector3(-70.94, -1761.88, 29.53) },
+    { name = "SPBU Clinton Ave / Vinewood",      coords = vector3(620.83, 268.53, 103.09) },
+    { name = "SPBU Mirror Park Blvd",            coords = vector3(1181.38, -330.85, 69.32) },
+    { name = "SPBU El Rancho Blvd / Murrieta",   coords = vector3(1208.61, -1402.57, 35.22) },
     { name = "SPBU Lindsay Circus / Little Seoul", coords = vector3(-724.56, -935.97, 19.21) },
     { name = "SPBU Korean Plaza / Little Seoul", coords = vector3(-525.68, -1211.23, 18.18) },
-    { name = "SPBU Del Perro Blvd / Rockford",  coords = vector3(-1437.04, -276.74, 46.21) },
+    { name = "SPBU Del Perro Blvd / Rockford",   coords = vector3(-1437.04, -276.74, 46.21) },
     { name = "SPBU Great Ocean Hwy / Del Perro", coords = vector3(-2096.34, -320.24, 13.17) },
-    { name = "SPBU Spanish Ave / Vinewood",     coords = vector3(179.85, -1558.12, 29.3) }
+    { name = "SPBU Spanish Ave / West Vinewood", coords = vector3(179.85, -1558.12, 29.3) }
 }
+
+-- Daftar 50 Nama Driver Indonesia (Sinkron dengan eco_tablet) & Pemetaan Plat Nomor Unik
+Config.IndonesianDriverNames = {
+    "Budi Santoso", "Agus Setiawan", "Rian Hidayat", "Eko Prasetyo", "Bambang Pamungkas",
+    "Dedi Kurniawan", "Ahmad Fauzi", "Rizky Ramadhan", "Hendra Gunawan", "Fajar Pratama",
+    "Doni Saputra", "Wahyu Nugroho", "Indra Wijaya", "Tri Handoko", "Bayu Wicaksono",
+    "Ilham Firmansyah", "Asep Sunandar", "Yanto Sukirno", "Joko Susilo", "Aris Munandar",
+    "Dimas Anggara", "Teguh Wibowo", "Nanang Suherman", "Surya Saputra", "Ade Iskandar",
+    "Gilang Ramadhan", "Rudi Hartono", "Mulyadi", "Danang Priyanto", "Taufik Hidayat",
+    "Andi Permana", "Cecep Supriatna", "Ujang Suhendar", "Iman Sulaeman", "Guntur Pratama",
+    "Bagus Setiadi", "Yoga Pratama", "Panji Kusuma", "Galih Rakasiwi", "Lukman Hakim",
+    "Rahmat Hidayat", "Samsul Bahri", "Zulham Efendi", "Herman Darmawan", "Irfan Maulana",
+    "Kurnia Sandi", "Faisal Basri", "Tomi Suwandi", "Hadi Prayitno", "Wawan Ridwan"
+}
+
+-- Fungsi Helper Menghasilkan Plat Nomor Sesuai Database Driver eco_tablet
+-- Default UI eco_tablet menampilkan 'LST-AI' untuk EcoLuxe dan 'B 1945 ECO' (GTA Plate: B1945ECO) untuk Driver
+Config.UseTabletExactPlate = true -- Jika true, menggunakan 'LST-AI' & 'B1945ECO' persis seperti kartu UI eco_tablet
 
 -- Daftar Destinasi Cepat Populer untuk Aplikasi EcoCab di Tablet
 Config.QuickDestinations = {

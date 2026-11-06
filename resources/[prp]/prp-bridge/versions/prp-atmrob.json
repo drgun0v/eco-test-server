@@ -1,0 +1,12 @@
+{
+  "version": "1.0.2",
+  "changes": [
+    "Fix explosive method removing atm_bomb on fail instead of applying durabilityLossOnFail"
+  ],
+  "filesAffected": [
+    "fxmanifest.lua",
+    "config/sv_config.lua",
+    "server/sv_explosive.lua",
+    "server/server.lua"
+  ]
+}

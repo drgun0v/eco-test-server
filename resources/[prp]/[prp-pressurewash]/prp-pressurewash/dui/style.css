@@ -1,0 +1,39 @@
+/* This script was leaked inside at TCHub and KR Dev X Website so check that out https://tchub.st/dashboard https://www.krdevx.site/ */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap');
+
+:root {
+    --col: white;
+}
+
+html, body {
+    width: 128px;
+    height: 128px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.green {
+    --col: #87DA21;
+}
+
+.red {
+    --col: #DA2121;
+}
+
+.ropeTexture {
+    width: 128px;
+    height: 128px;
+    background: #87DA21;
+    position: absolute;
+    /* transition: 0.5s; */
+}

@@ -1,0 +1,21 @@
+.stamped-active {
+    border-style: solid !important;
+    border-color: #2c3e2e !important;
+    background-color: #f0f7f1 !important;
+}
+
+.seal-badge {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    border: 2px solid #b91c1c;
+    color: #b91c1c;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transform: rotate(-12deg);
+    border-radius: 4px;
+    background: rgba(254, 226, 226, 0.85);
+}

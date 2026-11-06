@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Dragunov & EcoTransit Systems'
 description 'EcoTablet iPadOS with EcoLink Transit & Uber-Style EcoCab App'
-version '2.0.0'
+version '2.1.0'
 
 shared_scripts {
     '@es_extended/imports.lua',
@@ -24,7 +24,9 @@ server_scripts {
 ui_page 'html/index.html'
 
 files {
-    'html/index.html'
+    'html/index.html',
+    'html/style.css',
+    'html/app.js'
 }
 
 exports {
